@@ -21,7 +21,7 @@ async function ArtworkDetail({
 
   return (
     <article className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-2">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+      <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
         <Image
           src={artwork.imageUrl}
           alt={artwork.title}
