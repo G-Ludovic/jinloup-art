@@ -42,3 +42,10 @@ next-env.d.ts
 
 # config
 .vscode
+
+/lib/generated/prisma
+
+# prisma/migrations
+.agents/
+.claude/
+.windsurf/
