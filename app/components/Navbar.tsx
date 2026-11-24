@@ -23,7 +23,7 @@ export default function Navbar() {
     <header className="border-b border-zinc-800 bg-zinc-950 text-zinc-100">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="text-xl font-bold tracking-tight">
-          Atelier<span className="text-amber-400">.Art</span>
+          Jinloup<span className="text-amber-400">.Art</span>
         </Link>
 
         <div className="flex items-center gap-6">
