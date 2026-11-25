@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Jinloup-Art — Galerie & Forum",
   description: "Galerie d'art en ligne et forum communautaire",
+  icons: {
+    icon: "/logo-loup-mystique.webp",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

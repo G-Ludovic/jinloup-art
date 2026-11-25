@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import NavLinks, { type NavItem } from "./NavLinks";
 import UserMenu from "./UserMenu";
 
@@ -30,8 +31,21 @@ export default function Navbar() {
   return (
     <header className="border-b border-zinc-800 bg-zinc-950 text-zinc-100">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-xl font-bold tracking-tight">
-          Jinloup<span className="text-amber-400">.Art</span>
+        <Link
+          href="/"
+          className="flex items-center gap-3 text-xl font-bold tracking-tight"
+        >
+          <Image
+            src="/logo-loup-mystique.webp"
+            alt="Logo Jinloup.Art"
+            width={80}
+            height={80}
+            priority
+            className="h-20 w-20 rounded-full object-cover ring-1 ring-indigo-500/40"
+          />
+          <span>
+            Jinloup<span className="text-amber-400">.Art</span>
+          </span>
         </Link>
 
         <div className="flex items-center gap-6">
