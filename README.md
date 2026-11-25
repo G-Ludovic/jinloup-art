@@ -95,4 +95,4 @@ _(Ajoutez ici 2 ou 3 captures d'écran de votre galerie, du forum et de l'espace
 
 ## 👤 Auteur
 
-Projet conçu et développé par **Jinloup** dans le cadre de sa spécialisation sur **Next.js**.
+Projet conçu et développé par **Ludovic Galicher** dans le cadre de sa spécialisation sur **Next.js**.
