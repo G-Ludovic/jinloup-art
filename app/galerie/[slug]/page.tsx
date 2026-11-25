@@ -5,7 +5,9 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
 import LikeButton from "../LikeButton";
+import LikersSummary, { type LikerInfo } from "../LikersSummary";
 
 async function ArtworkDetail({
   params,
@@ -18,8 +20,19 @@ async function ArtworkDetail({
     prisma.artwork.findUnique({
       where: { slug },
       include: {
-        _count: {
-          select: { likes: true },
+        likes: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                role: true,
+                postsCount: true,
+                createdAt: true,
+              },
+            },
+          },
         },
       },
     }),
@@ -30,17 +43,16 @@ async function ArtworkDetail({
     notFound();
   }
 
-  const userLike = session
-    ? await prisma.artworkLike.findUnique({
-        where: {
-          artworkId_userId: {
-            artworkId: artwork.id,
-            userId: session.user.id,
-          },
-        },
-        select: { id: true },
-      })
-    : null;
+  const initialLiked = session
+    ? artwork.likes.some((like) => like.user.id === session.user.id)
+    : false;
+
+  const likers: LikerInfo[] = artwork.likes.map((like) => ({
+    id: like.user.id,
+    name: like.user.name,
+    roleBadge: getRoleBadge(like.user.role),
+    prestige: getPrestigeRank(like.user.postsCount, like.user.createdAt),
+  }));
 
   return (
     <article className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-2">
@@ -78,10 +90,11 @@ async function ArtworkDetail({
           <LikeButton
             artworkId={artwork.id}
             slug={artwork.slug}
-            initialCount={artwork._count.likes}
-            initialLiked={Boolean(userLike)}
+            initialCount={artwork.likes.length}
+            initialLiked={initialLiked}
             isAuthenticated={Boolean(session)}
           />
+          <LikersSummary likers={likers} />
         </div>
       </div>
     </article>
