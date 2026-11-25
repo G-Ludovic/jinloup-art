@@ -1,7 +1,13 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import NavLinks, { navLinks } from "./NavLinks";
+import NavLinks, { type NavItem } from "./NavLinks";
 import UserMenu from "./UserMenu";
+
+const navLinks: NavItem[] = [
+  { href: "/", label: "Accueil" },
+  { href: "/galerie", label: "Galerie" },
+  { href: "/forum", label: "Forum" },
+];
 
 function NavLinksFallback() {
   return (
@@ -29,7 +35,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-6">
           <Suspense fallback={<NavLinksFallback />}>
-            <NavLinks />
+            <NavLinks links={navLinks} />
           </Suspense>
 
           <UserMenu />

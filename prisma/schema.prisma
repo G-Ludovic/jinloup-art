@@ -37,6 +37,8 @@ model User {
   postsCount    Int       @default(0)
   sessions      Session[]
   accounts      Account[]
+  topics        Topic[]
+  comments      Comment[]
 
   @@unique([email])
   @@map("user")
@@ -88,4 +90,31 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Topic {
+  id        String    @id @default(cuid())
+  title     String
+  category  String
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+
+  @@index([authorId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  topicId   String
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([topicId])
+  @@index([authorId])
 }

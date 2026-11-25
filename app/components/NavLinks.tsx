@@ -3,18 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export const navLinks = [
-  { href: "/", label: "Accueil" },
-  { href: "/galerie", label: "Galerie" },
-  { href: "/forum", label: "Forum" },
-];
+export type NavItem = {
+  href: string;
+  label: string;
+};
 
-export default function NavLinks() {
+export default function NavLinks({ links }: { links: NavItem[] }) {
   const pathname = usePathname();
 
   return (
     <>
-      {navLinks.map((link) => {
+      {links.map((link) => {
         const isActive =
           link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
 
