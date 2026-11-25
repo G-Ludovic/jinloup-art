@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import NavLinks, { navLinks } from "./NavLinks";
+import UserMenu from "./UserMenu";
 
 function NavLinksFallback() {
   return (
@@ -31,12 +32,7 @@ export default function Navbar() {
             <NavLinks />
           </Suspense>
 
-          <Link
-            href="/connexion"
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400"
-          >
-            Connexion
-          </Link>
+          <UserMenu />
         </div>
       </nav>
     </header>
