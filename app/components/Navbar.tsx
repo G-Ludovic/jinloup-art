@@ -7,6 +7,7 @@ const navLinks: NavItem[] = [
   { href: "/", label: "Accueil" },
   { href: "/galerie", label: "Galerie" },
   { href: "/forum", label: "Forum" },
+  { href: "/membres", label: "Membres" },
 ];
 
 function NavLinksFallback() {
