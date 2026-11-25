@@ -6,6 +6,11 @@ import { prisma } from "@/lib/prisma";
 async function ArtworkGrid() {
   const artworks = await prisma.artwork.findMany({
     orderBy: { createdAt: "desc" },
+    include: {
+      _count: {
+        select: { likes: true },
+      },
+    },
   });
 
   if (artworks.length === 0) {
@@ -43,6 +48,10 @@ async function ArtworkGrid() {
               {artwork.year ? ` • ${artwork.year}` : ""}
             </p>
           </div>
+
+          <span className="flex items-center gap-1 text-sm text-zinc-400">
+            ❤️ {artwork._count.likes}
+          </span>
         </Link>
       ))}
     </div>

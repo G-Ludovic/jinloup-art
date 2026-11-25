@@ -23,6 +23,7 @@ model Artwork {
   medium      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  likes       ArtworkLike[]
 }
 
 model User {
@@ -39,6 +40,7 @@ model User {
   accounts      Account[]
   topics        Topic[]
   comments      Comment[]
+  likes         ArtworkLike[]
 
   @@unique([email])
   @@map("user")
@@ -117,4 +119,17 @@ model Comment {
 
   @@index([topicId])
   @@index([authorId])
+}
+
+model ArtworkLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  artworkId String
+  artwork   Artwork  @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([artworkId, userId])
+  @@index([artworkId])
+  @@index([userId])
 }
