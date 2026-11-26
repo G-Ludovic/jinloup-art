@@ -6,8 +6,11 @@ import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
+import UserAvatar from "@/app/components/UserAvatar";
 import LikeButton from "../LikeButton";
 import LikersSummary, { type LikerInfo } from "../LikersSummary";
+import ArtworkCommentForm from "./ArtworkCommentForm";
+import DeleteArtworkCommentButton from "./DeleteArtworkCommentButton";
 
 async function ArtworkDetail({
   params,
@@ -24,6 +27,21 @@ async function ArtworkDetail({
           orderBy: { createdAt: "desc" },
           include: {
             user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                role: true,
+                postsCount: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+        artworkComments: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            author: {
               select: {
                 id: true,
                 name: true,
@@ -56,51 +74,146 @@ async function ArtworkDetail({
     prestige: getPrestigeRank(like.user.postsCount, like.user.createdAt),
   }));
 
+  const isStaff =
+    session?.user.role === "ADMIN" || session?.user.role === "MODERATOR";
+
   return (
-    <article className="mt-6 grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
-      <div className="flex items-center justify-center">
-        <Image
-          src={artwork.imageUrl}
-          alt={artwork.title}
-          width={1200}
-          height={1200}
-          priority
-          sizes="(max-width: 1024px) 100vw, 50vw"
-          className="h-auto max-h-[75vh] w-auto max-w-full rounded-xl border border-zinc-800 bg-zinc-900 shadow-lg"
-        />
-      </div>
+    <>
+      <article className="mt-6 grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
+        <div className="flex items-center justify-center">
+          <Image
+            src={artwork.imageUrl}
+            alt={artwork.title}
+            width={1200}
+            height={1200}
+            priority
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="h-auto max-h-[75vh] w-auto max-w-full rounded-xl border border-zinc-800 bg-zinc-900 shadow-lg"
+          />
+        </div>
 
-      <div className="flex flex-col justify-center">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-100">
-          {artwork.title}
-        </h1>
-        <p className="mt-2 text-lg text-amber-400">
-          {artwork.artistName}
-          {artwork.year ? ` (${artwork.year})` : ""}
-        </p>
+        <div className="flex flex-col justify-center">
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-100">
+            {artwork.title}
+          </h1>
+          <p className="mt-2 text-lg text-amber-400">
+            {artwork.artistName}
+            {artwork.year ? ` (${artwork.year})` : ""}
+          </p>
 
-        {artwork.medium && (
-          <span className="mt-4 inline-block w-fit rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300">
-            {artwork.medium}
-          </span>
+          {artwork.medium && (
+            <span className="mt-4 inline-block w-fit rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300">
+              {artwork.medium}
+            </span>
+          )}
+
+          <p className="mt-6 leading-relaxed text-zinc-300">
+            {artwork.description}
+          </p>
+
+          <div className="mt-8">
+            <LikeButton
+              artworkId={artwork.id}
+              slug={artwork.slug}
+              initialCount={artwork.likes.length}
+              initialLiked={initialLiked}
+              isAuthenticated={Boolean(session)}
+            />
+            <LikersSummary likers={likers} />
+          </div>
+        </div>
+      </article>
+
+      {/* Section Commentaires sous l'œuvre */}
+      <div className="mt-12 space-y-6 border-t border-zinc-800 pt-10">
+        <h2 className="text-xl font-semibold text-zinc-100">
+          Commentaires ({artwork.artworkComments.length})
+        </h2>
+
+        {session ? (
+          <ArtworkCommentForm artworkId={artwork.id} slug={artwork.slug} />
+        ) : (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 text-sm text-zinc-400">
+            <Link
+              href="/connexion"
+              className="font-semibold text-amber-400 hover:underline"
+            >
+              Connectez-vous
+            </Link>{" "}
+            pour laisser un commentaire sur cette œuvre.
+          </div>
         )}
 
-        <p className="mt-6 leading-relaxed text-zinc-300">
-          {artwork.description}
-        </p>
+        {artwork.artworkComments.length === 0 ? (
+          <p className="text-sm text-zinc-500">
+            Aucun commentaire pour le moment. Soyez le premier à donner votre
+            avis !
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {artwork.artworkComments.map((comment) => {
+              const prestige = getPrestigeRank(
+                comment.author.postsCount,
+                comment.author.createdAt,
+              );
+              const roleBadge = getRoleBadge(comment.author.role);
+              const canDelete =
+                Boolean(session) &&
+                (session?.user.id === comment.author.id || isStaff);
 
-        <div className="mt-8">
-          <LikeButton
-            artworkId={artwork.id}
-            slug={artwork.slug}
-            initialCount={artwork.likes.length}
-            initialLiked={initialLiked}
-            isAuthenticated={Boolean(session)}
-          />
-          <LikersSummary likers={likers} />
-        </div>
+              return (
+                <div
+                  key={comment.id}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <UserAvatar
+                        name={comment.author.name}
+                        image={comment.author.image}
+                        size="md"
+                      />
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                        <strong className="text-zinc-200">
+                          {comment.author.name}
+                        </strong>
+                        {roleBadge && (
+                          <span
+                            className={`rounded border px-1.5 py-0.5 font-semibold ${roleBadge.color}`}
+                          >
+                            {roleBadge.label}
+                          </span>
+                        )}
+                        <span
+                          className={`rounded border px-1.5 py-0.5 ${prestige.badgeColor}`}
+                        >
+                          {prestige.label}
+                        </span>
+                        <span>
+                          •{" "}
+                          {new Date(comment.createdAt).toLocaleString("fr-FR")}
+                        </span>
+                      </div>
+                    </div>
+
+                    {canDelete && (
+                      <DeleteArtworkCommentButton
+                        commentId={comment.id}
+                        slug={artwork.slug}
+                      />
+                    )}
+                  </div>
+
+                  <p className="mt-3 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
+                    {comment.content}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
-    </article>
+    </>
   );
 }
 

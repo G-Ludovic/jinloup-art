@@ -8,7 +8,7 @@ async function ArtworkGrid() {
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
-        select: { likes: true },
+        select: { likes: true, artworkComments: true },
       },
     },
   });
@@ -39,19 +39,22 @@ async function ArtworkGrid() {
             />
           </div>
 
-          <div className="p-4">
-            <h2 className="text-lg font-semibold text-zinc-100 group-hover:text-amber-400">
-              {artwork.title}
-            </h2>
-            <p className="mt-1 text-sm text-zinc-400">
-              Par {artwork.artistName}
-              {artwork.year ? ` • ${artwork.year}` : ""}
-            </p>
-          </div>
+          <div className="flex items-center justify-between gap-3 p-4">
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-semibold text-zinc-100 group-hover:text-amber-400">
+                {artwork.title}
+              </h2>
+              <p className="mt-1 truncate text-sm text-zinc-400">
+                Par {artwork.artistName}
+                {artwork.year ? ` • ${artwork.year}` : ""}
+              </p>
+            </div>
 
-          <span className="flex items-center gap-1 text-sm text-zinc-400">
-            ❤️ {artwork._count.likes}
-          </span>
+            <div className="flex shrink-0 items-center gap-3 text-sm text-zinc-400">
+              <span>❤️ {artwork._count.likes}</span>
+              <span>💬 {artwork._count.artworkComments}</span>
+            </div>
+          </div>
         </Link>
       ))}
     </div>

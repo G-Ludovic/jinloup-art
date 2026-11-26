@@ -24,6 +24,7 @@ model Artwork {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   likes       ArtworkLike[]
+  artworkComments ArtworkComment[]
 }
 
 model User {
@@ -43,6 +44,7 @@ model User {
   topics        Topic[]
   comments      Comment[]
   likes         ArtworkLike[]
+  artworkComments ArtworkComment[]
 
   @@unique([email])
   @@map("user")
@@ -134,4 +136,17 @@ model ArtworkLike {
   @@unique([artworkId, userId])
   @@index([artworkId])
   @@index([userId])
+}
+
+model ArtworkComment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  artworkId String
+  artwork   Artwork  @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([artworkId])
+  @@index([authorId])
 }
