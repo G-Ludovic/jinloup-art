@@ -7,16 +7,19 @@ import { authClient } from "@/lib/auth-client";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
 import type { NavItem } from "./NavLinks";
 import UserAvatar from "./UserAvatar";
+import { useToast } from "./ToastProvider";
 
 export default function MobileMenu({ links }: { links: NavItem[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const toast = useToast();
   const { data: session, isPending } = authClient.useSession();
 
   async function handleSignOut() {
     await authClient.signOut();
     setIsOpen(false);
+    toast.info("Vous êtes maintenant déconnecté.");
     router.push("/");
     router.refresh();
   }

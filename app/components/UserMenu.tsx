@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
+import { useToast } from "./ToastProvider";
 
 export default function UserMenu() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
+  const toast = useToast();
 
   if (isPending) {
     return <div className="h-9 w-24 animate-pulse rounded-lg bg-zinc-800" />;
@@ -31,6 +33,7 @@ export default function UserMenu() {
 
   async function handleSignOut() {
     await authClient.signOut();
+    toast.info("Vous êtes déconnecté.");
     router.push("/");
     router.refresh();
   }

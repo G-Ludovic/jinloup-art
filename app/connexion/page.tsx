@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { useToast } from "../components/ToastProvider";
 
 export default function ConnexionPage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function ConnexionPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,6 +31,9 @@ export default function ConnexionPage() {
           setError(error.message ?? "Impossible de créer le compte.");
           return;
         }
+        toast.success(
+          "Compte créé avec succès ! Vous pouvez maintenant vous connecter.",
+        );
       } else {
         const { error } = await authClient.signIn.email({
           email,
@@ -38,6 +43,7 @@ export default function ConnexionPage() {
           setError(error.message ?? "Email ou mot de passe incorrect.");
           return;
         }
+        toast.success("Connexion réussie ! Bienvenue sur Jinloup-Art.");
       }
 
       router.push("/profil");
