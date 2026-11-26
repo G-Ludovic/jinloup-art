@@ -1,6 +1,6 @@
 # 🎨 Jinloup.Art — Galerie d'Art & Forum Communautaire
 
-Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer des œuvres d'art, d'échanger sur un forum communautaire et de récompenser l'engagement des membres via un système de grades hybride.
+Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer des œuvres d'art, d'échanger autour des créations et sur un forum communautaire, et de récompenser l'engagement des membres via un système de grades hybride.
 
 🌐 **Site en ligne :** [https://jinloup-art.vercel.app](https://jinloup-art.vercel.app)  
 📖 **Documentation technique complète :** [`DOCUMENTATION.md`](./DOCUMENTATION.md)
@@ -9,32 +9,32 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 
 ## ✨ Fonctionnalités principales
 
-### 🖼️ Galerie d'Art & Mentions J'aime
+### 🖼️ Galerie d'Art, Likes & Commentaires
 
-- Exposition d'œuvres avec affichage optimisé (`next/image`) et pages de détail dynamiques (`/galerie/[slug]`).
-- Système de **J'aime ❤️** en temps réel (_Optimistic UI_ via `useOptimistic`) avec contrainte d'unicité en base de données.
-- Résumé des mentions J'aime façon réseau social avec **modale interactive** listant les membres, leurs avatars et leurs grades.
+- Exposition d'œuvres avec affichage optimisé (`next/image`), cadrage intelligent sur la grille (`object-top`) et conservation des **proportions naturelles** sur les pages de détail (`/galerie/[slug]`, sans rognage des formats portrait).
+- Système de **J'aime ❤️** instantané (_Optimistic UI_ via `useOptimistic`) avec contrainte d'unicité en base de données et **modale interactive** listant les membres, leurs avatars et leurs grades.
+- **Commentaires sous chaque œuvre :** les membres connectés peuvent commenter les dessins (avec incrémentation automatique du prestige et modération par l'auteur, les Modérateurs ou les Admins).
 
 ### 💬 Forum Communautaire
 
-- Création de sujets classés par catégories (_Discussion_, _Critique d'œuvre_, _Technique_, _Inspiration_).
-- Réponses via les **Server Actions** Next.js avec incrémentation automatique de la participation.
+- Sujets structurés par catégories (_Discussion_, _Critique d'œuvre_, _Technique_, _Inspiration_), dont la création est réservée aux **Admins** et **Modérateurs** pour garder un forum clair et sans spam.
+- Réponses ouvertes à tous les membres via les **Server Actions** Next.js avec incrémentation du prestige.
 - Affichage de l'avatar et de la citation personnelle de chaque membre sous ses messages.
-- Modération des sujets et commentaires réservée à l'auteur, aux **Modérateurs** et aux **Administrateurs**.
 
 ### 👤 Espace Membre, Avatars & Système de Grades Hybride
 
-- Authentification sécurisée par email/mot de passe (**Better Auth** + sessions PostgreSQL).
+- Authentification sécurisée par email/mot de passe (**Better Auth** + sessions PostgreSQL) avec **notifications Toast** (inscription, connexion, déconnexion).
 - **Espace `/profil` complet :** upload d'avatar recadré automatiquement à **48×48 px** (WebP), citation personnelle (3 lignes max), statistiques d'activité et barre de progression vers le rang suivant.
-- **Annuaire `/membres` :** liste publique de la communauté avec avatar, date d'inscription, citation et grades.
+- **Annuaire `/membres` :** liste publique de la communauté avec avatar, date d'inscription, citation et grades (excluant les comptes bannis).
 - **Rôles de permissions :** `MEMBER`, `MODERATOR`, `ADMIN`.
 - **Rangs de prestige dynamiques :** calculés automatiquement selon l'ancienneté et le nombre de publications (_Novice → Apprenti → Amateur Éclairé → Connaisseur → Maître d'Art_).
 
-### 🛡️ Espace d'Administration (`/admin`)
+### 🛡️ Espace d'Administration & Modération (`/admin`)
 
 - Tableau de bord protégé côté serveur avec statistiques globales.
 - Publication et suppression d'œuvres avec génération automatique du `slug`.
-- Gestion des membres et attribution des rôles (`MEMBER` / `MODERATOR` / `ADMIN`).
+- Création, **édition et suppression des sujets du forum** directement depuis le panel admin (`ADMIN` & `MODERATOR`).
+- **Gestion des membres & hiérarchie de modération :** changement des rôles (`ADMIN` uniquement), **bannissement instantané** (révocation immédiate des sessions + blocage à la connexion) et **suppression de compte** avec respect strict des permissions (`MODERATOR` sur `MEMBER`, `ADMIN` sur `MEMBER` et `MODERATOR`).
 
 ### 📱 Responsive, Légal & RGPD
 
@@ -47,7 +47,7 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 
 - **Framework :** Next.js 16 (App Router, Turbopack, React 19, Server Actions)
 - **Langage :** TypeScript
-- **Styling :** Tailwind CSS
+- **Styling :** Tailwind CSS v4
 - **Base de données :** PostgreSQL (Neon)
 - **ORM :** Prisma 7 (`@prisma/adapter-pg`)
 - **Authentification :** Better Auth (`@better-auth/prisma-adapter`)

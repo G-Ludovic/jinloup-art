@@ -10,10 +10,10 @@ Ce document résume l'architecture complète, les concepts clés, les commandes 
 | :----------------------- | :----------------------------------------------- | :-------------------------------------------------- |
 | **Framework Full-Stack** | **Next.js 16** (App Router + Turbopack)          | Routage, rendu serveur/client, API, Server Actions  |
 | **Langage**              | **TypeScript**                                   | Typage strict bout-en-bout (BDD → Serveur → Client) |
-| **Style**                | **Tailwind CSS**                                 | Design responsive par classes utilitaires           |
+| **Style**                | **Tailwind CSS v4**                              | Design responsive par classes utilitaires           |
 | **Base de données**      | **PostgreSQL** (hébergé sur **Neon**, Francfort) | Base relationnelle                                  |
 | **ORM**                  | **Prisma 7** (`@prisma/adapter-pg`)              | Modélisation du schéma, migrations, requêtes typées |
-| **Authentification**     | **Better Auth** (`@better-auth/prisma-adapter`)  | Inscription, connexion, sessions sécurisées en BDD  |
+| **Authentification**     | **Better Auth** (`@better-auth/prisma-adapter`)  | Inscription, connexion, sessions, hooks de sécurité |
 | **Déploiement**          | **Vercel**                                       | CI/CD automatique depuis GitHub                     |
 
 ---
@@ -30,45 +30,51 @@ jinloup-art/
 │   │   ├── MobileMenu.tsx           # Menu burger mobile/tablette (Client Component)
 │   │   ├── UserMenu.tsx             # Menu utilisateur desktop (Client Component)
 │   │   ├── UserAvatar.tsx           # Avatar circulaire 28/36/48 px ou initiale
+│   │   ├── ToastProvider.tsx        # Context & hook useToast() sans dépendance
 │   │   └── Footer.tsx               # Pied de page en 2 étages (Server Component)
 │   ├── admin/
-│   │   ├── page.tsx                 # Dashboard Admin protégé + vue cartes mobile
-│   │   ├── actions.ts               # Server Actions Admin (œuvres & rôles)
+│   │   ├── page.tsx                 # Dashboard Admin/Modérateur + vue cartes mobile
+│   │   ├── actions.ts               # Server Actions Admin (œuvres, rôles, sujets, ban/suppression)
 │   │   ├── AddArtworkForm.tsx       # Formulaire d'ajout d'œuvre
-│   │   ├── DeleteArtworkButton.tsx  # Bouton de suppression confirmé
-│   │   └── RoleSelect.tsx           # Sélecteur de rôle membre
-│   ├── connexion/page.tsx           # Inscription & Connexion (Client Component)
+│   │   ├── DeleteArtworkButton.tsx  # Bouton de suppression d'œuvre confirmé
+│   │   ├── RoleSelect.tsx           # Sélecteur de rôle membre (ADMIN uniquement)
+│   │   ├── TopicManagerRow.tsx      # Édition & suppression des sujets du forum
+│   │   └── UserModerationActions.tsx # Boutons Bannir / Débannir / Supprimer membre
+│   ├── connexion/page.tsx           # Inscription & Connexion + Toasts
 │   ├── forum/
 │   │   ├── page.tsx                 # Liste des sujets (Server Component)
-│   │   ├── actions.ts               # Server Actions Forum (sujets, réponses, modération)
-│   │   ├── NewTopicForm.tsx         # Formulaire nouveau sujet
+│   │   ├── actions.ts               # Server Actions Forum (création staff, réponses, modération)
+│   │   ├── NewTopicForm.tsx         # Bouton/formulaire réservé au staff
 │   │   └── [id]/
 │   │       ├── page.tsx             # Détail d'un sujet + réponses + signatures
 │   │       ├── ReplyForm.tsx        # Formulaire de réponse
 │   │       └── DeleteButton.tsx     # Suppression sujet/commentaire
 │   ├── galerie/
-│   │   ├── page.tsx                 # Liste des œuvres + compteur likes
-│   │   ├── actions.ts               # Server Action toggleArtworkLike
+│   │   ├── page.tsx                 # Liste des œuvres + compteurs ❤️ / 💬
+│   │   ├── actions.ts               # Server Actions toggleArtworkLike & commentaires œuvres
 │   │   ├── LikeButton.tsx           # Bouton J'aime optimiste (useOptimistic)
 │   │   ├── LikersSummary.tsx        # Résumé + modale liste des likes
-│   │   └── [slug]/page.tsx          # Détail d'une œuvre (Route dynamique)
-│   ├── membres/page.tsx             # Annuaire public des membres & grades
+│   │   └── [slug]/
+│   │       ├── page.tsx             # Détail œuvre (format adaptatif) + commentaires
+│   │       ├── ArtworkCommentForm.tsx # Formulaire commentaire sous œuvre
+│   │       └── DeleteArtworkCommentButton.tsx # Suppression commentaire œuvre
+│   ├── membres/page.tsx             # Annuaire public des membres actifs & grades
 │   ├── profil/
 │   │   ├── page.tsx                 # Profil protégé, stats & progression prestige
 │   │   ├── actions.ts               # Server Action updateProfile (avatar + bio)
 │   │   └── EditProfileForm.tsx      # Upload avatar recadré 48x48 px + citation
 │   ├── mentions-legales/page.tsx    # Mentions légales (LCEN)
 │   ├── politique-confidentialite/page.tsx # Politique RGPD
-│   ├── layout.tsx                   # Squelette sticky-footer + metadata & favicon
+│   ├── layout.tsx                   # Sticky-footer, ToastProvider, metadata & favicon
 │   └── page.tsx                     # Page d'accueil responsive (/)
 ├── lib/
 │   ├── prisma.ts                    # Instance unique (singleton) de PrismaClient
-│   ├── auth.ts                      # Configuration serveur Better Auth
+│   ├── auth.ts                      # Configuration serveur Better Auth + hook ban
 │   ├── auth-client.ts               # Client React Better Auth (typé)
 │   ├── ranks.ts                     # Rangs de prestige, barre de progression & badges
 │   └── generated/prisma/            # Client Prisma généré automatiquement
 ├── prisma/
-│   ├── schema.prisma                # Modèles BDD (Artwork, ArtworkLike, User, Topic, Comment...)
+│   ├── schema.prisma                # Modèles BDD (Artwork, ArtworkLike, ArtworkComment, User, Topic, Comment...)
 │   └── migrations/                  # Historique SQL des migrations
 ├── public/
 │   ├── logo-loup-mystique.webp      # Logo principal & favicon
@@ -95,7 +101,7 @@ jinloup-art/
 
 - **Server Component (par défaut) :** exécuté uniquement côté serveur, lit Prisma et les sessions sans exposer de secrets au navigateur, ne peut pas utiliser de hooks React.
 - **Client Component (`"use client";`) :** réservé aux zones interactives (`useState`, `useActionState`, `useOptimistic`, `useTransition`, `usePathname`, `authClient.useSession()`).
-- **Bonne pratique :** isoler `"use client";` sur les plus petits composants possibles (`NavLinks.tsx`, `MobileMenu.tsx`, `LikeButton.tsx`).
+- **Pattern Provider dans `layout.tsx` :** entourer `{children}` (et `Navbar` / `Footer`) avec un Client Component comme `<ToastProvider>` laisse les enfants passés en `children` rester des **Server Components**.
 
 ### C. Règles strictes de Next.js 16 (`Cache Components`)
 
@@ -105,6 +111,11 @@ jinloup-art/
 2. **Ne jamais importer de données depuis un fichier `"use client"` dans un Server Component :**
    - Tout export d'un fichier `"use client"` devient une référence client côté serveur (erreur au `npm run build` : `TypeError: ...map is not a function`).
    - _Solution :_ déclarer `navLinks` dans le Server Component (`Navbar.tsx`) et le passer via `props` (`<NavLinks links={navLinks} />`, `<MobileMenu links={navLinks} />`).
+
+### D. Images (`<Image />`) & Formats Portrait/Paysage
+
+- **Grille `/galerie` :** `aspect-4/3` + `fill` + `object-cover object-top` pour uniformiser les cartes tout en cadrant les visages/têtes vers le haut.
+- **Page détail `/galerie/[slug]` :** pour ne jamais rogner les dessins en portrait, ne pas utiliser `aspect-4/3` + `object-cover` ; passer `width={1200} height={1200}` avec `className="h-auto max-h-[75vh] w-auto max-w-full"` afin que l'image s'adapte exactement à ses proportions naturelles.
 
 ---
 
@@ -120,50 +131,63 @@ jinloup-art/
 
 Stocke `PrismaClient` dans `globalThis` en développement pour éviter de saturer Neon lors du Hot Reload.
 
-> **Réflexe indispensable :** après toute modification de `prisma/schema.prisma`, exécuter `npx prisma migrate dev`, `npx prisma generate`, puis **redémarrer `npm run dev` (`Ctrl+C`)** pour vider l'ancien client en cache dans `globalThis` (sinon `prisma.nouvelleTable` ou un nouveau champ fera planter les requêtes).
+> **Réflexe indispensable :** après toute modification de `prisma/schema.prisma`, exécuter `npx prisma migrate dev`, `npx prisma generate`, puis **redémarrer `npm run dev` (`Ctrl+C`)** (et faire `TypeScript: Restart TS Server` dans VS Code si les nouveaux champs apparaissent en `never`).
 
-### C. Relations & Contraintes avancées
+### C. Relations, Transactions & Nommage
 
-- **Transactions (`prisma.$transaction`) :** création d'un sujet/commentaire + incrémentation de `postsCount` de manière atomique.
+- **Transactions (`prisma.$transaction`) :** création d'un sujet, d'une réponse forum ou d'un commentaire d'œuvre + incrémentation atomique de `postsCount` ; bannissement + suppression immédiate des sessions actives.
 - **Unicité des Likes (`ArtworkLike`) :** `@@unique([artworkId, userId])` empêche les doublons au niveau SQL et génère la clé composée `artworkId_userId` dans Prisma.
+- **Cohérence des noms de relations :** dans `Artwork`, la relation des commentaires s'appelle **`artworkComments`** (`ArtworkComment[]`), ce qui évite toute ambiguïté avec `Topic.comments`.
 
 ---
 
-## 5. Authentification, Profil & Système de Grades (Better Auth)
+## 5. Authentification, Modération & Système de Grades (Better Auth)
 
-### A. Sécurité Serveur & Champs personnalisés
+### A. Sécurité Serveur, Champs personnalisés & Bannissement
 
-- `lib/auth.ts` déclare `role`, `postsCount` et `bio` dans `user.additionalFields` avec **`input: false`** (empêche l'auto-élévation de privilèges à l'inscription).
+- `lib/auth.ts` déclare `role`, `postsCount`, `bio` et `banned` dans `user.additionalFields` avec **`input: false`** (empêche l'auto-élévation de privilèges à l'inscription).
 - `nextCookies()` est placé en dernier dans `plugins`.
-- `lib/auth-client.ts` utilise `inferAdditionalFields<typeof auth>()` pour typer `session.user` côté React, et `refetch()` permet de rafraîchir la session client après modification du profil.
-- **Sécurité des données publiques :** sur `/membres` et dans la modale des likes (`LikersSummary`), on ne sélectionne **jamais** le champ `email` dans Prisma.
+- **Blocage des comptes bannis :** `databaseHooks.session.create.before` vérifie `user.banned` avant de créer une session et lève `new APIError("FORBIDDEN", { message: "..." })`.
+- `lib/auth-client.ts` utilise `inferAdditionalFields<typeof auth>()` pour typer `session.user` côté React, et `refetch()` permet de rafraîchir la session client après modification du profil ou publication d'un commentaire.
+- **Sécurité des données publiques :** sur `/membres` et dans la modale des likes (`LikersSummary`), on ne sélectionne **jamais** le champ `email` dans Prisma, et `/membres` filtre `where: { banned: false }`.
 
-### B. Avatars 48×48 px sans stockage externe (compatible Vercel)
+### B. Hiérarchie des permissions (`app/admin/actions.ts` & `app/forum/actions.ts`)
+
+- **Création/édition/suppression des sujets du forum :** réservée à `ADMIN` et `MODERATOR` (`requireStaff()`).
+- **Gestion des œuvres & changement de rôles :** réservée exclusivement à `ADMIN` (`requireAdmin()`), avec blocage empêchant un admin de retirer son propre rôle.
+- **Bannissement & suppression de compte (`verifyModerationPermission`) :**
+  - Interdit sur soi-même et sur les comptes `ADMIN`.
+  - `MODERATOR` ne peut modérer que les `MEMBER`.
+  - `ADMIN` peut modérer `MEMBER` et `MODERATOR`.
+
+### C. Avatars 48×48 px sans stockage externe (compatible Vercel)
 
 - Dans `EditProfileForm.tsx`, le navigateur recadre l'image en carré et la redimensionne à **48×48 px en WebP** via `<canvas>` (~2 Ko).
 - La Server Action `updateProfile` valide strictement le préfixe (`data:image/(webp|png|jpeg);base64,` ou `https://`) et la taille max (`25 000` caractères) avant d'enregistrer dans `user.image`, protégeant contre les injections SVG/XSS.
 
-### C. Grades Hybrides (`lib/ranks.ts`)
+### D. Grades Hybrides (`lib/ranks.ts`)
 
 - **Permissions (`user.role`) :** `"MEMBER" | "MODERATOR" | "ADMIN"`.
 - **Prestige :** `points = postsCount * 10 + joursDancienneté` (_Novice_ 0 → _Apprenti_ 30 → _Amateur Éclairé_ 100 → _Connaisseur_ 300 → _Maître d'Art_ 700), avec calcul du pourcentage de progression (`getPrestigeProgress`).
 
 ---
 
-## 6. Server Actions, Optimistic UI & Responsive
+## 6. Server Actions, Optimistic UI, Toasts & Responsive
 
-### A. Formulaires & Actions
+### A. Formulaires, Optimistic UI & Toasts
 
-- **`useActionState`** : gestion des formulaires avec validation et erreur serveur (`NewTopicForm`, `ReplyForm`, `AddArtworkForm`, `EditProfileForm`).
-- **`useTransition`** : feedback de chargement sur boutons/sélecteurs (`DeleteButton`, `RoleSelect`).
+- **`useActionState`** : gestion des formulaires avec validation et erreur serveur (`NewTopicForm`, `ReplyForm`, `AddArtworkForm`, `EditProfileForm`, `TopicManagerRow`, `ArtworkCommentForm`). Utiliser un horodatage `successAt` + `useRef` dans `useEffect` pour déclencher `toast.success` / `reset()` exactement une fois par envoi.
+- **`useTransition`** : feedback de chargement sur boutons/sélecteurs (`DeleteButton`, `RoleSelect`, `UserModerationActions`, `DeleteArtworkCommentButton`).
 - **`useOptimistic`** (`LikeButton.tsx`) : met à jour le ❤️ et le compteur instantanément à l'écran (0 ms) avant la réponse serveur de `toggleArtworkLike`.
+- **`ToastProvider` (`useToast()`)** : file de notifications auto-fermées après 3,5 s avec `useCallback` / `useMemo` et `aria-live="polite"`.
 - Toujours appeler `redirect()` **hors** des blocs `try/catch`.
 
-### B. Mise en page Responsive
+### B. Mise en page Responsive & Tailwind v4
 
 - **Sticky Footer (`app/layout.tsx`) :** `body` en `flex min-h-dvh flex-col` et `main` en `flex-1` pour coller le footer en bas même sur les pages courtes.
 - **Navigation adaptative :** menu horizontal sur `lg:flex` (≥ 1024 px) et `MobileMenu.tsx` (menu burger + tiroir tactile) en dessous de `lg:`.
 - **Tableaux Admin adaptatifs :** cartes empilées sur mobile (`md:hidden`) et tableau complet sur tablette/desktop (`hidden md:block`).
+- **Tailwind v4 :** utiliser `wrap-break-word` (classe canonique remplaçant `break-words`) sur les contenus texte longs.
 
 ---
 
@@ -178,6 +202,6 @@ Stocke `PrismaClient` dans `globalThis` en développement pour éviter de sature
 
 - Copier `DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET` et `BETTER_AUTH_URL` **sans guillemets `"`**.
 - **`BETTER_AUTH_URL`** doit correspondre exactement au domaine de production en `https://` et **sans `/` final** (ex : `https://jinloup-art.vercel.app`), sinon Better Auth renvoie **`Invalid origin`** à la connexion.
-- _Astuce multi-environnements :_ l'option `baseURL: { allowedHosts: [...] }` dans `lib/auth.ts` permet aussi d'accepter automatiquement `localhost:3000` et les URLs de Preview Vercel.
+- `baseURL: { allowedHosts: [...] }` dans `lib/auth.ts` permet aussi d'accepter automatiquement `localhost:3000` et les URLs de Preview Vercel.
 - Sur Vercel, ne pas cliquer sur l'intégration optionnelle _Prisma Postgres_ si vous utilisez déjà Neon dans vos variables d'environnement.
 - _Note stockage :_ en serverless (Vercel), le disque serveur est en lecture seule. Les images dans `public/images/` (commitées sur Git) fonctionnent parfaitement, mais l'upload de nouvelles œuvres depuis `/admin` en production nécessite soit des URLs externes, soit un service cloud (Cloudinary, UploadThing, Vercel Blob).
