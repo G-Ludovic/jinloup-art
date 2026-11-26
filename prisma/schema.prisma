@@ -33,6 +33,7 @@ model User {
   emailVerified Boolean   @default(false)
   image         String?
   bio           String?
+  banned        Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   role          String    @default("MEMBER")

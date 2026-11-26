@@ -5,6 +5,7 @@ import UserAvatar from "@/app/components/UserAvatar";
 
 async function MembersList() {
   const members = await prisma.user.findMany({
+    where: { banned: false },
     orderBy: [{ postsCount: "desc" }, { createdAt: "asc" }],
     select: {
       id: true,

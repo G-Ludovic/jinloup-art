@@ -210,3 +210,68 @@ export async function deleteTopicAdmin(topicId: string) {
   revalidatePath("/forum");
   revalidatePath("/admin");
 }
+
+async function verifyModerationPermission(targetUserId: string) {
+  const session = await requireStaff();
+
+  if (targetUserId === session.user.id) {
+    throw new Error(
+      "Vous ne pouvez pas effectuer cette action sur votre propre compte.",
+    );
+  }
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: targetUserId },
+    select: { id: true, role: true, banned: true },
+  });
+
+  if (!targetUser) {
+    throw new Error("Membre introuvable.");
+  }
+
+  if (targetUser.role === "ADMIN") {
+    throw new Error("Impossible de bannir ou supprimer un administrateur.");
+  }
+
+  if (session.user.role === "MODERATOR" && targetUser.role !== "MEMBER") {
+    throw new Error("Un modérateur ne peut agir que sur les simples membres.");
+  }
+
+  return targetUser;
+}
+
+export async function toggleBanUser(targetUserId: string) {
+  const targetUser = await verifyModerationPermission(targetUserId);
+  const nextBanned = !targetUser.banned;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: targetUserId },
+      data: { banned: nextBanned },
+    });
+
+    // Si on bannit : on déconnecte immédiatement toutes ses sessions actives
+    if (nextBanned) {
+      await tx.session.deleteMany({
+        where: { userId: targetUserId },
+      });
+    }
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/membres");
+}
+
+export async function deleteUserAccount(targetUserId: string) {
+  await verifyModerationPermission(targetUserId);
+
+  // onDelete: Cascade nettoie automatiquement sessions, sujets, commentaires et likes
+  await prisma.user.delete({
+    where: { id: targetUserId },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/membres");
+  revalidatePath("/forum");
+  revalidatePath("/galerie");
+}

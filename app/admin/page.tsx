@@ -10,6 +10,7 @@ import AddArtworkForm from "./AddArtworkForm";
 import RoleSelect from "./RoleSelect";
 import DeleteArtworkButton from "./DeleteArtworkButton";
 import TopicManagerRow from "./TopicManagerRow";
+import UserModerationActions from "./UserModerationActions";
 
 async function AdminDashboard() {
   const session = await auth.api.getSession({
@@ -38,6 +39,7 @@ async function AdminDashboard() {
         name: true,
         email: true,
         role: true,
+        banned: true,
         postsCount: true,
         createdAt: true,
       },
@@ -161,6 +163,7 @@ async function AdminDashboard() {
       </div>
 
       {/* Gestion des Membres & Grades */}
+      {/* Gestion des Membres & Grades */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:p-6">
         <h2 className="text-lg font-semibold text-zinc-100">
           Membres &amp; Grades ({users.length})
@@ -171,6 +174,10 @@ async function AdminDashboard() {
           {users.map((u) => {
             const prestige = getPrestigeRank(u.postsCount, u.createdAt);
             const roleBadge = getRoleBadge(u.role);
+            const canModerateUser =
+              u.id !== session.user.id &&
+              u.role !== "ADMIN" &&
+              (isAdmin || u.role === "MEMBER");
 
             return (
               <div
@@ -179,9 +186,16 @@ async function AdminDashboard() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-zinc-100">
-                      {u.name}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-semibold text-zinc-100">
+                        {u.name}
+                      </p>
+                      {u.banned && (
+                        <span className="rounded border border-rose-500/40 bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-rose-300">
+                          Banni
+                        </span>
+                      )}
+                    </div>
                     <p className="truncate text-xs text-zinc-400">{u.email}</p>
                   </div>
                   <span
@@ -191,23 +205,33 @@ async function AdminDashboard() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-zinc-800/80 pt-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-800/80 pt-3 text-xs">
                   <span className="text-zinc-400">
                     Messages :{" "}
                     <strong className="text-zinc-200">{u.postsCount}</strong>
                   </span>
 
-                  {isAdmin ? (
-                    <RoleSelect
-                      userId={u.id}
-                      currentRole={u.role}
-                      isSelf={u.id === session.user.id}
-                    />
-                  ) : (
-                    <span className="text-zinc-300">
-                      {roleBadge?.label ?? "Membre"}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {isAdmin ? (
+                      <RoleSelect
+                        userId={u.id}
+                        currentRole={u.role}
+                        isSelf={u.id === session.user.id}
+                      />
+                    ) : (
+                      <span className="text-zinc-300">
+                        {roleBadge?.label ?? "Membre"}
+                      </span>
+                    )}
+
+                    {canModerateUser && (
+                      <UserModerationActions
+                        userId={u.id}
+                        userName={u.name}
+                        isBanned={u.banned}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -223,18 +247,30 @@ async function AdminDashboard() {
                 <th className="py-2 pr-4">Email</th>
                 <th className="py-2 pr-4">Prestige</th>
                 <th className="py-2 pr-4">Messages</th>
-                <th className="py-2">Rôle</th>
+                <th className="py-2 pr-4">Rôle</th>
+                <th className="py-2 pl-4">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/70">
               {users.map((u) => {
                 const prestige = getPrestigeRank(u.postsCount, u.createdAt);
                 const roleBadge = getRoleBadge(u.role);
+                const canModerateUser =
+                  u.id !== session.user.id &&
+                  u.role !== "ADMIN" &&
+                  (isAdmin || u.role === "MEMBER");
 
                 return (
                   <tr key={u.id}>
                     <td className="py-3 pr-4 font-medium text-zinc-100">
-                      {u.name}
+                      <div className="flex items-center gap-2">
+                        <span>{u.name}</span>
+                        {u.banned && (
+                          <span className="rounded border border-rose-500/40 bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-rose-300">
+                            Banni
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 pr-4 text-zinc-400">{u.email}</td>
                     <td className="py-3 pr-4">
@@ -245,7 +281,7 @@ async function AdminDashboard() {
                       </span>
                     </td>
                     <td className="py-3 pr-4 text-zinc-300">{u.postsCount}</td>
-                    <td className="py-3">
+                    <td className="py-3 pr-4">
                       {isAdmin ? (
                         <RoleSelect
                           userId={u.id}
@@ -256,6 +292,17 @@ async function AdminDashboard() {
                         <span className="text-xs text-zinc-300">
                           {roleBadge?.label ?? "Membre"}
                         </span>
+                      )}
+                    </td>
+                    <td className="py-3 pl-4">
+                      {canModerateUser ? (
+                        <UserModerationActions
+                          userId={u.id}
+                          userName={u.name}
+                          isBanned={u.banned}
+                        />
+                      ) : (
+                        <span className="text-xs text-zinc-600">—</span>
                       )}
                     </td>
                   </tr>
