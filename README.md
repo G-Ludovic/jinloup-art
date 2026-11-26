@@ -1,6 +1,6 @@
 # 🎨 Jinloup.Art — Galerie d'Art & Forum Communautaire
 
-Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer des œuvres d'art, d'échanger autour des créations et sur un forum communautaire, et de récompenser l'engagement des membres via un système de grades hybride.
+Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer des œuvres d'art, de partager les créations de la communauté, d'échanger sur un forum et de récompenser l'engagement des membres via un système de grades hybride.
 
 🌐 **Site en ligne :** [https://jinloup-art.vercel.app](https://jinloup-art.vercel.app)  
 📖 **Documentation technique complète :** [`DOCUMENTATION.md`](./DOCUMENTATION.md)
@@ -9,11 +9,18 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 
 ## ✨ Fonctionnalités principales
 
-### 🖼️ Galerie d'Art, Likes & Commentaires
+### 🖼️ Double Galerie d'Art, Likes & Commentaires
 
-- Exposition d'œuvres avec affichage optimisé (`next/image`), cadrage intelligent sur la grille (`object-top`) et conservation des **proportions naturelles** sur les pages de détail (`/galerie/[slug]`, sans rognage des formats portrait).
+- **Les œuvres de Jinloup** et **La Galerie des Membres** sur une même page (`/galerie`), avec raccourci d'ancrage rapide et article de mise en avant dès la page d'accueil (`/galerie#galerie-membres`).
+- Affichage optimisé (`next/image`), cadrage intelligent sur la grille (`object-top`) et conservation des **proportions naturelles** sur les pages de détail (`/galerie/[slug]`, sans rognage des formats portrait).
+- Soumission d'œuvres par les membres (`/galerie/proposer`) avec compression automatique en WebP côté client, soumise à **validation préalable de l'équipe**.
 - Système de **J'aime ❤️** instantané (_Optimistic UI_ via `useOptimistic`) avec contrainte d'unicité en base de données et **modale interactive** listant les membres, leurs avatars et leurs grades.
-- **Commentaires sous chaque œuvre :** les membres connectés peuvent commenter les dessins (avec incrémentation automatique du prestige et modération par l'auteur, les Modérateurs ou les Admins).
+- **Commentaires sous chaque œuvre :** les membres connectés peuvent commenter les dessins (avec incrémentation automatique du prestige et modération).
+
+### 🔔 Notifications en direct
+
+- Cloche de notifications dans la barre de navigation (desktop & mobile) : avertit le staff lors d'une nouvelle proposition d'œuvre et informe les membres de l'acceptation ou du refus.
+- Marquage comme lu et suppression individuelle ou groupée des notifications lues.
 
 ### 💬 Forum Communautaire
 
@@ -24,7 +31,7 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 ### 👤 Espace Membre, Avatars & Système de Grades Hybride
 
 - Authentification sécurisée par email/mot de passe (**Better Auth** + sessions PostgreSQL) avec **notifications Toast** (inscription, connexion, déconnexion).
-- **Espace `/profil` complet :** upload d'avatar recadré automatiquement à **48×48 px** (WebP), citation personnelle (3 lignes max), statistiques d'activité et barre de progression vers le rang suivant.
+- **Espace `/profil` complet :** upload d'avatar recadré automatiquement à **48×48 px** (WebP), citation personnelle (3 lignes max), statistiques d'activité, barre de progression vers le rang suivant et suivi des œuvres proposées.
 - **Annuaire `/membres` :** liste publique de la communauté avec avatar, date d'inscription, citation et grades (excluant les comptes bannis).
 - **Rôles de permissions :** `MEMBER`, `MODERATOR`, `ADMIN`.
 - **Rangs de prestige dynamiques :** calculés automatiquement selon l'ancienneté et le nombre de publications (_Novice → Apprenti → Amateur Éclairé → Connaisseur → Maître d'Art_).
@@ -32,13 +39,14 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 ### 🛡️ Espace d'Administration & Modération (`/admin`)
 
 - Tableau de bord protégé côté serveur avec statistiques globales.
+- File de validation des œuvres proposées par les membres (**Accepter** ou **Refuser avec motif**).
 - Publication et suppression d'œuvres avec génération automatique du `slug`.
 - Création, **édition et suppression des sujets du forum** directement depuis le panel admin (`ADMIN` & `MODERATOR`).
-- **Gestion des membres & hiérarchie de modération :** changement des rôles (`ADMIN` uniquement), **bannissement instantané** (révocation immédiate des sessions + blocage à la connexion) et **suppression de compte** avec respect strict des permissions (`MODERATOR` sur `MEMBER`, `ADMIN` sur `MEMBER` et `MODERATOR`).
+- **Gestion des membres & hiérarchie de modération :** changement des rôles (`ADMIN` uniquement), **bannissement instantané** (révocation immédiate des sessions + blocage à la connexion) et **suppression de compte** avec respect strict des permissions.
 
 ### 📱 Responsive, Légal & RGPD
 
-- Interface **100 % responsive** (mobile, tablette, desktop) avec menu burger dédié et cartes adaptatives sur mobile.
+- Interface **100 % responsive** (mobile, tablette, desktop) avec menu burger dédié, scroll fluide et cartes adaptatives sur mobile.
 - Pied de page permanent (_sticky footer_) incluant les pages **Mentions légales** (`/mentions-legales`) et **Politique de confidentialité** (`/politique-confidentialite`).
 
 ---
