@@ -2,34 +2,44 @@
 
 Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer des œuvres d'art, d'échanger sur un forum communautaire et de récompenser l'engagement des membres via un système de grades hybride.
 
-> 📖 Une documentation technique détaillée de l'architecture et des choix d'implémentation est disponible dans [`DOCUMENTATION.md`](./DOCUMENTATION.md).
+🌐 **Site en ligne :** [https://jinloup-art.vercel.app](https://jinloup-art.vercel.app)  
+📖 **Documentation technique complète :** [`DOCUMENTATION.md`](./DOCUMENTATION.md)
 
 ---
 
 ## ✨ Fonctionnalités principales
 
-### 🖼️ Galerie d'Art
+### 🖼️ Galerie d'Art & Mentions J'aime
 
-- Exposition d'œuvres avec affichage optimisé (`next/image`).
-- Pages de détail dynamiques (`/galerie/[slug]`) avec informations artistiques (titre, artiste, technique, année, description).
+- Exposition d'œuvres avec affichage optimisé (`next/image`) et pages de détail dynamiques (`/galerie/[slug]`).
+- Système de **J'aime ❤️** en temps réel (_Optimistic UI_ via `useOptimistic`) avec contrainte d'unicité en base de données.
+- Résumé des mentions J'aime façon réseau social avec **modale interactive** listant les membres, leurs avatars et leurs grades.
 
 ### 💬 Forum Communautaire
 
 - Création de sujets classés par catégories (_Discussion_, _Critique d'œuvre_, _Technique_, _Inspiration_).
-- Système de réponses en temps réel via les **Server Actions** Next.js.
+- Réponses via les **Server Actions** Next.js avec incrémentation automatique de la participation.
+- Affichage de l'avatar et de la citation personnelle de chaque membre sous ses messages.
 - Modération des sujets et commentaires réservée à l'auteur, aux **Modérateurs** et aux **Administrateurs**.
 
-### 🏅 Comptes Membres & Système de Grades Hybride
+### 👤 Espace Membre, Avatars & Système de Grades Hybride
 
 - Authentification sécurisée par email/mot de passe (**Better Auth** + sessions PostgreSQL).
+- **Espace `/profil` complet :** upload d'avatar recadré automatiquement à **48×48 px** (WebP), citation personnelle (3 lignes max), statistiques d'activité et barre de progression vers le rang suivant.
+- **Annuaire `/membres` :** liste publique de la communauté avec avatar, date d'inscription, citation et grades.
 - **Rôles de permissions :** `MEMBER`, `MODERATOR`, `ADMIN`.
-- **Rangs de prestige dynamiques :** calculés automatiquement selon l'ancienneté du membre et son nombre de publications sur le forum (_Novice → Apprenti → Amateur Éclairé → Connaisseur → Maître d'Art_).
+- **Rangs de prestige dynamiques :** calculés automatiquement selon l'ancienneté et le nombre de publications (_Novice → Apprenti → Amateur Éclairé → Connaisseur → Maître d'Art_).
 
 ### 🛡️ Espace d'Administration (`/admin`)
 
 - Tableau de bord protégé côté serveur avec statistiques globales.
 - Publication et suppression d'œuvres avec génération automatique du `slug`.
 - Gestion des membres et attribution des rôles (`MEMBER` / `MODERATOR` / `ADMIN`).
+
+### 📱 Responsive, Légal & RGPD
+
+- Interface **100 % responsive** (mobile, tablette, desktop) avec menu burger dédié et cartes adaptatives sur mobile.
+- Pied de page permanent (_sticky footer_) incluant les pages **Mentions légales** (`/mentions-legales`) et **Politique de confidentialité** (`/politique-confidentialite`).
 
 ---
 
@@ -41,6 +51,7 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 - **Base de données :** PostgreSQL (Neon)
 - **ORM :** Prisma 7 (`@prisma/adapter-pg`)
 - **Authentification :** Better Auth (`@better-auth/prisma-adapter`)
+- **Hébergement :** Vercel
 
 ---
 
@@ -87,12 +98,17 @@ Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 
 ---
 
-## 📸 Aperçu
+## 🧠 Démarche d'apprentissage & Méthodologie
 
-_(Ajoutez ici 2 ou 3 captures d'écran de votre galerie, du forum et de l'espace admin !)_
+Issu d'une formation JavaScript/React/SQL à la **Wild Code School**, j'ai conçu **Jinloup.Art** pour me spécialiser sur **Next.js 16**, **PostgreSQL** et **Prisma**.
+
+J'ai travaillé en approche **pair-programming** avec **Gemini** en tant que tuteur et assistant technique :
+
+- **Mon rôle :** conception fonctionnelle, gestion de l'environnement, base Neon, Git, intégration de mes œuvres, tests et débogage jusqu'au déploiement en production sur Vercel.
+- **Rôle de l'assistant :** découpage en jalons itératifs, explications détaillées des mécanismes Next.js 16 (_Server/Client Components_, _Server Actions_, _Cache Components_, _Optimistic UI_) et co-rédaction de la documentation de révision.
 
 ---
 
 ## 👤 Auteur
 
-Projet conçu et développé par **Ludovic Galicher** dans le cadre de sa spécialisation sur **Next.js**.
+Projet conçu et développé par **Jinloup** dans le cadre de sa spécialisation sur **Next.js**.

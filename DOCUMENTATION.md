@@ -1,19 +1,20 @@
 # Guide Technique & Architecture — Jinloup.Art (Next.js 16)
 
-Ce document résume l'architecture, les concepts clés, les commandes et les bonnes pratiques appliquées dans ce projet **Next.js 16**, afin de servir de support de révision et de base réutilisable pour de futurs projets full-stack.
+Ce document résume l'architecture complète, les concepts clés, les commandes et les retours d'expérience appliqués dans ce projet **Next.js 16**, afin de servir de support de révision et de base réutilisable pour de futurs projets full-stack.
 
 ---
 
 ## 1. Stack Technique
 
-| Brique                   | Outil utilisé                                   | Rôle                                                |
-| :----------------------- | :---------------------------------------------- | :-------------------------------------------------- |
-| **Framework Full-Stack** | **Next.js 16** (App Router + Turbopack)         | Routage, rendu serveur/client, API, Server Actions  |
-| **Langage**              | **TypeScript**                                  | Typage strict bout-en-bout (BDD → Serveur → Client) |
-| **Style**                | **Tailwind CSS**                                | Design rapide par classes utilitaires               |
-| **Base de données**      | **PostgreSQL** (hébergé sur **Neon**)           | Base relationnelle                                  |
-| **ORM**                  | **Prisma 7** (`@prisma/adapter-pg`)             | Modélisation du schéma, migrations, requêtes typées |
-| **Authentification**     | **Better Auth** (`@better-auth/prisma-adapter`) | Inscription, connexion, sessions sécurisées en BDD  |
+| Brique                   | Outil utilisé                                    | Rôle                                                |
+| :----------------------- | :----------------------------------------------- | :-------------------------------------------------- |
+| **Framework Full-Stack** | **Next.js 16** (App Router + Turbopack)          | Routage, rendu serveur/client, API, Server Actions  |
+| **Langage**              | **TypeScript**                                   | Typage strict bout-en-bout (BDD → Serveur → Client) |
+| **Style**                | **Tailwind CSS**                                 | Design responsive par classes utilitaires           |
+| **Base de données**      | **PostgreSQL** (hébergé sur **Neon**, Francfort) | Base relationnelle                                  |
+| **ORM**                  | **Prisma 7** (`@prisma/adapter-pg`)              | Modélisation du schéma, migrations, requêtes typées |
+| **Authentification**     | **Better Auth** (`@better-auth/prisma-adapter`)  | Inscription, connexion, sessions sécurisées en BDD  |
+| **Déploiement**          | **Vercel**                                       | CI/CD automatique depuis GitHub                     |
 
 ---
 
@@ -24,11 +25,14 @@ jinloup-art/
 ├── app/
 │   ├── api/auth/[...all]/route.ts   # Endpoints Better Auth automatiques
 │   ├── components/
-│   │   ├── Navbar.tsx               # Header (Server Component)
+│   │   ├── Navbar.tsx               # Header responsive (Server Component)
 │   │   ├── NavLinks.tsx             # Liens actifs avec usePathname (Client Component)
-│   │   └── UserMenu.tsx             # Menu utilisateur & badges (Client Component)
+│   │   ├── MobileMenu.tsx           # Menu burger mobile/tablette (Client Component)
+│   │   ├── UserMenu.tsx             # Menu utilisateur desktop (Client Component)
+│   │   ├── UserAvatar.tsx           # Avatar circulaire 28/36/48 px ou initiale
+│   │   └── Footer.tsx               # Pied de page en 2 étages (Server Component)
 │   ├── admin/
-│   │   ├── page.tsx                 # Dashboard Admin protégé (Server Component)
+│   │   ├── page.tsx                 # Dashboard Admin protégé + vue cartes mobile
 │   │   ├── actions.ts               # Server Actions Admin (œuvres & rôles)
 │   │   ├── AddArtworkForm.tsx       # Formulaire d'ajout d'œuvre
 │   │   ├── DeleteArtworkButton.tsx  # Bouton de suppression confirmé
@@ -39,27 +43,38 @@ jinloup-art/
 │   │   ├── actions.ts               # Server Actions Forum (sujets, réponses, modération)
 │   │   ├── NewTopicForm.tsx         # Formulaire nouveau sujet
 │   │   └── [id]/
-│   │       ├── page.tsx             # Détail d'un sujet + réponses (Route dynamique)
+│   │       ├── page.tsx             # Détail d'un sujet + réponses + signatures
 │   │       ├── ReplyForm.tsx        # Formulaire de réponse
 │   │       └── DeleteButton.tsx     # Suppression sujet/commentaire
 │   ├── galerie/
-│   │   ├── page.tsx                 # Liste des œuvres (Server Component)
+│   │   ├── page.tsx                 # Liste des œuvres + compteur likes
+│   │   ├── actions.ts               # Server Action toggleArtworkLike
+│   │   ├── LikeButton.tsx           # Bouton J'aime optimiste (useOptimistic)
+│   │   ├── LikersSummary.tsx        # Résumé + modale liste des likes
 │   │   └── [slug]/page.tsx          # Détail d'une œuvre (Route dynamique)
-│   ├── profil/page.tsx              # Profil protégé (Server Component)
-│   ├── layout.tsx                   # Squelette global + metadata SEO
-│   └── page.tsx                     # Page d'accueil (/)
+│   ├── membres/page.tsx             # Annuaire public des membres & grades
+│   ├── profil/
+│   │   ├── page.tsx                 # Profil protégé, stats & progression prestige
+│   │   ├── actions.ts               # Server Action updateProfile (avatar + bio)
+│   │   └── EditProfileForm.tsx      # Upload avatar recadré 48x48 px + citation
+│   ├── mentions-legales/page.tsx    # Mentions légales (LCEN)
+│   ├── politique-confidentialite/page.tsx # Politique RGPD
+│   ├── layout.tsx                   # Squelette sticky-footer + metadata & favicon
+│   └── page.tsx                     # Page d'accueil responsive (/)
 ├── lib/
 │   ├── prisma.ts                    # Instance unique (singleton) de PrismaClient
 │   ├── auth.ts                      # Configuration serveur Better Auth
 │   ├── auth-client.ts               # Client React Better Auth (typé)
-│   ├── ranks.ts                     # Calcul des rangs de prestige & badges de rôle
+│   ├── ranks.ts                     # Rangs de prestige, barre de progression & badges
 │   └── generated/prisma/            # Client Prisma généré automatiquement
 ├── prisma/
-│   ├── schema.prisma                # Modèles BDD (Artwork, User, Session, Topic, Comment...)
+│   ├── schema.prisma                # Modèles BDD (Artwork, ArtworkLike, User, Topic, Comment...)
 │   └── migrations/                  # Historique SQL des migrations
-├── public/images/                   # Images locales servies depuis /images/...
+├── public/
+│   ├── logo-loup-mystique.webp      # Logo principal & favicon
+│   └── images/                      # Œuvres locales servies depuis /images/...
 ├── .env                             # Variables secrètes (JAMAIS commité sur Git)
-├── next.config.ts                   # Configuration Next.js (ex: images.remotePatterns)
+├── next.config.ts                   # Configuration Next.js (images.remotePatterns)
 └── prisma7.config.ts                # Configuration CLI Prisma (pointe sur DIRECT_URL)
 ```
 
@@ -67,49 +82,29 @@ jinloup-art/
 
 ## 3. Concepts clés de Next.js 16 (App Router)
 
-### A. Le routage par dossiers
+### A. Le routage par dossiers & fichiers spéciaux
 
 - Un dossier dans `app/` ne devient une URL accessible que s'il contient **`page.tsx`**.
-- **`layout.tsx`** enveloppe toutes les pages de son dossier et sous-dossiers sans se recharger lors de la navigation.
-- **`[slug]` ou `[id]`** : route dynamique. Depuis Next.js 15/16, `params` est une **Promise** :
-  ```tsx
-  export default async function Page({
-    params,
-  }: {
-    params: Promise<{ slug: string }>;
-  }) {
-    const { slug } = await params;
-  }
-  ```
-- **`[...all]`** : route _catch-all_ (utilisée dans `app/api/auth/[...all]/route.ts`).
-- **`notFound()`** (de `next/navigation`) : déclenche immédiatement une vraie page 404 si une donnée n'existe pas en BDD.
+- **`layout.tsx`** enveloppe toutes les pages sans se recharger.
+- **`[slug]` ou `[id]`** : route dynamique. `params` est une **Promise** à attendre avec `await params`.
+- **`[...all]`** : route _catch-all_ (utilisée par Better Auth).
+- **`notFound()`** : déclenche une vraie page 404 si une ressource est introuvable.
+- **Favicon :** Next.js donne la priorité à `app/favicon.ico` ou `app/icon.{png,jpg,svg,ico}`. Pour utiliser un `.webp` placé dans `public/`, il faut supprimer `app/favicon.ico` et déclarer `metadata.icons` dans `app/layout.tsx`.
 
 ### B. Server Components vs Client Components
 
-- **Par défaut, tout composant dans `app/` est un Server Component** :
-  - S'exécute uniquement côté serveur (les `console.log` s'affichent dans le terminal, pas dans le navigateur).
-  - Peut appeler `prisma` et lire les cookies/sessions directement, sans exposer de secrets au client.
-  - Ne peut **pas** utiliser `useState`, `useEffect`, `onClick` ou les hooks de navigation.
-- **Client Component (`"use client";` en ligne 1)** :
-  - Indispensable dès qu'il y a de l'interactivité (`useState`, `onClick`, `useActionState`, `usePathname`, `authClient.useSession()`).
-  - **Bonne pratique :** garder `"use client";` sur les plus petits composants possibles (ex : `NavLinks.tsx` plutôt que toute la `Navbar.tsx`).
+- **Server Component (par défaut) :** exécuté uniquement côté serveur, lit Prisma et les sessions sans exposer de secrets au navigateur, ne peut pas utiliser de hooks React.
+- **Client Component (`"use client";`) :** réservé aux zones interactives (`useState`, `useActionState`, `useOptimistic`, `useTransition`, `usePathname`, `authClient.useSession()`).
+- **Bonne pratique :** isoler `"use client";` sur les plus petits composants possibles (`NavLinks.tsx`, `MobileMenu.tsx`, `LikeButton.tsx`).
 
-### C. Règles strictes de Next.js 16 (Cache Components & Build)
+### C. Règles strictes de Next.js 16 (`Cache Components`)
 
 1. **Toujours entourer les données dynamiques d'un `<Suspense>` :**
-   - En Next.js 16 (avec `cacheComponents` activé), tout composant qui lit des données dynamiques à la volée (`prisma.*`, `headers()`, `auth.api.getSession()`, `usePathname()`) doit être isolé dans un `<Suspense fallback={...}>`.
-   - _Erreur typique si oublié :_ `blocking-prerender-client-hook` ou `uncached data accessed outside <Suspense>`.
-
+   - Tout composant qui lit des données à la volée (`prisma.*`, `headers()`, `auth.api.getSession()`, `usePathname()`) doit être placé dans un `<Suspense fallback={...}>` (erreur sinon : `blocking-prerender-client-hook` ou `uncached data accessed outside <Suspense>`).
+   - Dans les composants statiques globaux (`Footer.tsx`), éviter `new Date()` hors `<Suspense>` pour ne pas bloquer le pré-rendu des pages statiques et `/_not-found`.
 2. **Ne jamais importer de données depuis un fichier `"use client"` dans un Server Component :**
-   - Tout export d'un fichier `"use client"` devient une référence client côté serveur.
-   - _Erreur typique au `npm run build` :_ `TypeError: i.navLinks.map is not a function`.
-   - _Solution :_ définir les données statiques (ex : `navLinks`) dans le Server Component (ou un fichier neutre sans `"use client"`) et les passer en `props` au Client Component.
-
-### D. Images optimisées (`<Image />`)
-
-- Toujours utiliser `<Image />` de `next/image` (compression automatique, WebP/AVIF, lazy-loading).
-- **Images locales :** placées dans `public/images/dessin.jpg` → accessibles via `src="/images/dessin.jpg"`.
-- **Images externes :** les domaines doivent être autorisés dans `next.config.ts` sous `images.remotePatterns`, et l'URL doit pointer directement vers le fichier image (`https://images.unsplash.com/...`), pas vers une page HTML.
+   - Tout export d'un fichier `"use client"` devient une référence client côté serveur (erreur au `npm run build` : `TypeError: ...map is not a function`).
+   - _Solution :_ déclarer `navLinks` dans le Server Component (`Navbar.tsx`) et le passer via `props` (`<NavLinks links={navLinks} />`, `<MobileMenu links={navLinks} />`).
 
 ---
 
@@ -117,115 +112,72 @@ jinloup-art/
 
 ### A. Les deux URLs Neon dans `.env`
 
-Avec Neon et Prisma 7, on sépare deux connexions :
-
-- **`DATABASE_URL`** _(avec `-pooler`)_ : utilisée par l'application (`lib/prisma.ts`) pour gérer efficacement de nombreuses connexions simultanées.
-- **`DIRECT_URL`** _(sans `-pooler`)_ : utilisée par `prisma7.config.ts` pour exécuter les migrations de schéma (`prisma migrate dev`).
-- Utiliser **`sslmode=verify-full`** dans les URLs pour éviter le warning SSL du pilote `pg`.
+- **`DATABASE_URL`** _(avec `-pooler`)_ : utilisée par l'application (`lib/prisma.ts`) pour gérer les connexions simultanées.
+- **`DIRECT_URL`** _(sans `-pooler`)_ : utilisée par `prisma7.config.ts` pour exécuter les migrations (`prisma migrate dev`).
+- Toujours utiliser **`sslmode=verify-full`** dans les deux URLs pour éviter le warning SSL du pilote `pg`.
 
 ### B. Le Singleton `lib/prisma.ts`
 
-En développement, le Hot Reload réexécute les modules très souvent. Stocker l'instance `PrismaClient` dans `globalThis` évite de saturer PostgreSQL de connexions ouvertes.
+Stocke `PrismaClient` dans `globalThis` en développement pour éviter de saturer Neon lors du Hot Reload.
 
-> **Astuce :** Après avoir modifié `prisma/schema.prisma` et relancé `prisma generate`, il faut **redémarrer `npm run dev` (`Ctrl+C`)** pour que `globalThis` charge la nouvelle version du client Prisma (sinon `prisma.nouvelleTable` sera `undefined`).
+> **Réflexe indispensable :** après toute modification de `prisma/schema.prisma`, exécuter `npx prisma migrate dev`, `npx prisma generate`, puis **redémarrer `npm run dev` (`Ctrl+C`)** pour vider l'ancien client en cache dans `globalThis` (sinon `prisma.nouvelleTable` ou un nouveau champ fera planter les requêtes).
 
-### C. Commandes Prisma essentielles
+### C. Relations & Contraintes avancées
 
-```bash
-# Créer et appliquer une migration après modification de schema.prisma
-npx prisma migrate dev --name nom_de_la_migration
-
-# Régénérer le client TypeScript (lib/generated/prisma)
-npx prisma generate
-
-# Ouvrir l'interface graphique pour voir/modifier la BDD
-npx prisma studio
-```
-
-### D. Transactions atomiques (`prisma.$transaction`)
-
-Utilisé lors de la création d'un sujet ou d'un commentaire sur le forum : si la création échoue, `postsCount` n'est pas incrémenté (tout passe ou rien ne passe).
+- **Transactions (`prisma.$transaction`) :** création d'un sujet/commentaire + incrémentation de `postsCount` de manière atomique.
+- **Unicité des Likes (`ArtworkLike`) :** `@@unique([artworkId, userId])` empêche les doublons au niveau SQL et génère la clé composée `artworkId_userId` dans Prisma.
 
 ---
 
-## 5. Authentification & Système de Grades (Better Auth)
+## 5. Authentification, Profil & Système de Grades (Better Auth)
 
-### A. Configuration Serveur (`lib/auth.ts`)
+### A. Sécurité Serveur & Champs personnalisés
 
-- Connecté à PostgreSQL via `prismaAdapter(prisma, { provider: "postgresql" })`.
-- Champs personnalisés déclarés dans `user.additionalFields` (`role` et `postsCount`) avec **`input: false`** : empêche un utilisateur malveillant de s'auto-attribuer `role: "ADMIN"` via la requête HTTP d'inscription.
-- Plugin **`nextCookies()`** placé **en dernier** pour gérer automatiquement les cookies dans les Server Actions et Route Handlers Next.js.
+- `lib/auth.ts` déclare `role`, `postsCount` et `bio` dans `user.additionalFields` avec **`input: false`** (empêche l'auto-élévation de privilèges à l'inscription).
+- `nextCookies()` est placé en dernier dans `plugins`.
+- `lib/auth-client.ts` utilise `inferAdditionalFields<typeof auth>()` pour typer `session.user` côté React, et `refetch()` permet de rafraîchir la session client après modification du profil.
+- **Sécurité des données publiques :** sur `/membres` et dans la modale des likes (`LikersSummary`), on ne sélectionne **jamais** le champ `email` dans Prisma.
 
-### B. Configuration Client (`lib/auth-client.ts`)
+### B. Avatars 48×48 px sans stockage externe (compatible Vercel)
 
-- Utilise `inferAdditionalFields<typeof auth>()` pour que TypeScript connaisse `session.user.role` et `session.user.postsCount` côté React.
+- Dans `EditProfileForm.tsx`, le navigateur recadre l'image en carré et la redimensionne à **48×48 px en WebP** via `<canvas>` (~2 Ko).
+- La Server Action `updateProfile` valide strictement le préfixe (`data:image/(webp|png|jpeg);base64,` ou `https://`) et la taille max (`25 000` caractères) avant d'enregistrer dans `user.image`, protégeant contre les injections SVG/XSS.
 
-### C. Double niveau de vérification (Règle de sécurité absolue)
+### C. Grades Hybrides (`lib/ranks.ts`)
 
-- **Pour l'affichage UI (Client) :** `authClient.useSession()` sert uniquement à afficher/cacher des boutons (`Navbar`, formulaire de nouveau sujet). **Ce n'est jamais une sécurité suffisante.**
-- **Pour la sécurité réelle (Serveur) :** toute page protégée (`/profil`, `/admin`) et toute Server Action (`createTopic`, `deleteTopic`, `createArtwork`, `updateUserRole`) doit obligatoirement rappeler :
-  ```ts
-  const session = await auth.api.getSession({ headers: await headers() });
-  ```
-  et vérifier `session.user.role` ou `session.user.id === resource.authorId`.
-
-### D. Système de Grades Hybride (`lib/ranks.ts`)
-
-- **Permissions (`user.role` en BDD) :** `"MEMBER" | "MODERATOR" | "ADMIN"` — contrôle les droits d'accès.
-- **Prestige (calculé dynamiquement) :** combiné entre `user.postsCount` et l'ancienneté (`user.createdAt`) :
-  - `points = postsCount * 10 + joursDancienneté`
-  - Paliers : _Novice_ (0) → _Apprenti_ (30) → _Amateur Éclairé_ (100) → _Connaisseur_ (300) → _Maître d'Art_ (700).
+- **Permissions (`user.role`) :** `"MEMBER" | "MODERATOR" | "ADMIN"`.
+- **Prestige :** `points = postsCount * 10 + joursDancienneté` (_Novice_ 0 → _Apprenti_ 30 → _Amateur Éclairé_ 100 → _Connaisseur_ 300 → _Maître d'Art_ 700), avec calcul du pourcentage de progression (`getPrestigeProgress`).
 
 ---
 
-## 6. Server Actions & Formulaires (`"use server"`)
+## 6. Server Actions, Optimistic UI & Responsive
 
-Les Server Actions remplacent les routes API classiques pour les mutations (créer, modifier, supprimer) :
+### A. Formulaires & Actions
 
-1. **Côté Serveur (`actions.ts`) :**
-   - `"use server";` tout en haut du fichier.
-   - Vérifier `session` et droits d'accès.
-   - Valider les données reçues depuis `FormData`.
-   - Exécuter la requête Prisma.
-   - Appeler **`revalidatePath("/chemin")`** pour rafraîchir le cache des pages concernées.
-   - Appeler **`redirect("/nouvelle-url")`** **en dehors** de tout bloc `try/catch` (car Next.js lève une erreur interne pour effectuer la redirection).
-2. **Côté Client (`Form.tsx`) :**
-   - Utiliser **`useActionState`** (de `"react"`) pour récupérer `[state, formAction, isPending]`, afficher les erreurs serveur et désactiver le bouton pendant l'envoi.
-   - Utiliser **`useTransition`** pour les actions déclenchées par un bouton ou un `<select>` (`DeleteButton`, `RoleSelect`).
+- **`useActionState`** : gestion des formulaires avec validation et erreur serveur (`NewTopicForm`, `ReplyForm`, `AddArtworkForm`, `EditProfileForm`).
+- **`useTransition`** : feedback de chargement sur boutons/sélecteurs (`DeleteButton`, `RoleSelect`).
+- **`useOptimistic`** (`LikeButton.tsx`) : met à jour le ❤️ et le compteur instantanément à l'écran (0 ms) avant la réponse serveur de `toggleArtworkLike`.
+- Toujours appeler `redirect()` **hors** des blocs `try/catch`.
+
+### B. Mise en page Responsive
+
+- **Sticky Footer (`app/layout.tsx`) :** `body` en `flex min-h-dvh flex-col` et `main` en `flex-1` pour coller le footer en bas même sur les pages courtes.
+- **Navigation adaptative :** menu horizontal sur `lg:flex` (≥ 1024 px) et `MobileMenu.tsx` (menu burger + tiroir tactile) en dessous de `lg:`.
+- **Tableaux Admin adaptatifs :** cartes empilées sur mobile (`md:hidden`) et tableau complet sur tablette/desktop (`hidden md:block`).
 
 ---
 
-## 7. Checklist pour démarrer un nouveau projet avec cette stack
+## 7. Déploiement Vercel & Checklist de Production
 
-```bash
-# 1. Créer le projet Next.js (TypeScript + Tailwind + App Router)
-npx create-next-app@latest mon-projet
+### A. Préparation du projet
 
-# 2. Installer Prisma 7 + pilote PostgreSQL
-npm install -D prisma@7 @types/pg
-npm install @prisma/client@7 @prisma/adapter-pg@7 pg dotenv
-npx prisma init --datasource-provider postgresql --output ../lib/generated/prisma
+1. Dans `package.json`, définir `"build": "prisma generate && next build"` pour que Vercel régénère le client Prisma à chaque déploiement.
+2. Vérifier en local avec `npm run build` et `npm run start`.
 
-# 3. Configurer .env (DATABASE_URL poolée, DIRECT_URL directe, sslmode=verify-full)
-#    et adapter prisma.config.ts pour pointer sur env("DIRECT_URL")
+### B. Variables d'environnement sur Vercel
 
-# 4. Installer Better Auth
-npm install better-auth @better-auth/prisma-adapter
-# Générer BETTER_AUTH_SECRET avec : openssl rand -base64 32
-
-# 5. Générer le schéma Auth + migrer
-npx auth@latest generate
-npx prisma migrate dev --name init
-npx prisma generate
-```
-
-### Vérification avant mise en production
-
-Toujours valider le projet complet avec :
-
-```bash
-npm run build
-npm run start
-```
-
-Si `npm run build` passe avec **0 erreur TypeScript** et **0 erreur de prerendering**, l'application est prête à être déployée (ex : sur Vercel avec les mêmes variables `.env` et `BETTER_AUTH_URL` mis à jour avec le nom de domaine final).
+- Copier `DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET` et `BETTER_AUTH_URL` **sans guillemets `"`**.
+- **`BETTER_AUTH_URL`** doit correspondre exactement au domaine de production en `https://` et **sans `/` final** (ex : `https://jinloup-art.vercel.app`), sinon Better Auth renvoie **`Invalid origin`** à la connexion.
+- _Astuce multi-environnements :_ l'option `baseURL: { allowedHosts: [...] }` dans `lib/auth.ts` permet aussi d'accepter automatiquement `localhost:3000` et les URLs de Preview Vercel.
+- Sur Vercel, ne pas cliquer sur l'intégration optionnelle _Prisma Postgres_ si vous utilisez déjà Neon dans vos variables d'environnement.
+- _Note stockage :_ en serverless (Vercel), le disque serveur est en lecture seule. Les images dans `public/images/` (commitées sur Git) fonctionnent parfaitement, mais l'upload de nouvelles œuvres depuis `/admin` en production nécessite soit des URLs externes, soit un service cloud (Cloudinary, UploadThing, Vercel Blob).
