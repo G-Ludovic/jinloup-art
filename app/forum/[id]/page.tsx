@@ -83,7 +83,7 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
           )}
         </div>
 
-        <h1 className="mt-4 text-2xl font-bold tracking-tight text-zinc-100">
+        <h1 className="mt-4 wrap-break-word text-2xl font-bold tracking-tight text-zinc-100">
           {topic.title}
         </h1>
 
@@ -113,7 +113,7 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
 
-        <p className="mt-6 whitespace-pre-wrap leading-relaxed text-zinc-200">
+        <p className="mt-6 wrap-break-word whitespace-pre-wrap leading-relaxed text-zinc-200">
           {topic.content}
         </p>
 
@@ -187,7 +187,7 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
                   )}
                 </div>
 
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
+                <p className="mt-3 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
                   {comment.content}
                 </p>
 
