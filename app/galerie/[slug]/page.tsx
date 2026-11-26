@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
 import LikeButton from "../LikeButton";
 import LikersSummary, { type LikerInfo } from "../LikersSummary";
+import UserAvatar from "@/app/components/UserAvatar";
 
 async function ArtworkDetail({
   params,
@@ -27,6 +28,7 @@ async function ArtworkDetail({
               select: {
                 id: true,
                 name: true,
+                image: true,
                 role: true,
                 postsCount: true,
                 createdAt: true,
@@ -50,6 +52,7 @@ async function ArtworkDetail({
   const likers: LikerInfo[] = artwork.likes.map((like) => ({
     id: like.user.id,
     name: like.user.name,
+    image: like.user.image,
     roleBadge: getRoleBadge(like.user.role),
     prestige: getPrestigeRank(like.user.postsCount, like.user.createdAt),
   }));

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
+import UserAvatar from "@/app/components/UserAvatar";
 
 async function MembersList() {
   const members = await prisma.user.findMany({
@@ -8,6 +9,8 @@ async function MembersList() {
     select: {
       id: true,
       name: true,
+      image: true,
+      bio: true,
       role: true,
       postsCount: true,
       createdAt: true,
@@ -27,7 +30,6 @@ async function MembersList() {
       {members.map((member) => {
         const prestige = getPrestigeRank(member.postsCount, member.createdAt);
         const roleBadge = getRoleBadge(member.role);
-        const initial = member.name.charAt(0).toUpperCase();
 
         return (
           <div
@@ -36,9 +38,7 @@ async function MembersList() {
           >
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/15 text-base font-bold text-amber-400">
-                  {initial}
-                </div>
+                <UserAvatar name={member.name} image={member.image} size="lg" />
 
                 <div>
                   <h2 className="font-semibold text-zinc-100">{member.name}</h2>
@@ -63,6 +63,12 @@ async function MembersList() {
                   {prestige.label}
                 </span>
               </div>
+
+              {member.bio && (
+                <p className="mt-4 line-clamp-3 border-l-2 border-zinc-700 pl-3 text-xs italic whitespace-pre-line text-zinc-400">
+                  {member.bio}
+                </p>
+              )}
             </div>
 
             <div className="mt-5 border-t border-zinc-800/80 pt-3 text-xs text-zinc-400">

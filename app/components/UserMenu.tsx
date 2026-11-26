@@ -1,5 +1,6 @@
 "use client";
 
+import UserAvatar from "./UserAvatar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -49,6 +50,8 @@ export default function UserMenu() {
         href="/profil"
         className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm hover:border-zinc-700"
       >
+        <UserAvatar name={user.name} image={user.image} size="sm" />
+
         <span className="font-medium text-zinc-100">{user.name}</span>
         {roleBadge && (
           <span

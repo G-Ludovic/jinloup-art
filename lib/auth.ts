@@ -24,6 +24,11 @@ export const auth = betterAuth({
         defaultValue: 0,
         input: false,
       },
+      bio: {
+        type: "string",
+        required: false,
+        input: false,
+      },
     },
   },
   plugins: [

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
+import UserAvatar from "@/app/components/UserAvatar";
 import { deleteComment, deleteTopic } from "../actions";
 import ReplyForm from "./ReplyForm";
 import DeleteButton from "./DeleteButton";
@@ -20,6 +21,8 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
           select: {
             id: true,
             name: true,
+            image: true,
+            bio: true,
             role: true,
             postsCount: true,
             createdAt: true,
@@ -32,6 +35,8 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
               select: {
                 id: true,
                 name: true,
+                image: true,
+                bio: true,
                 role: true,
                 postsCount: true,
                 createdAt: true,
@@ -82,28 +87,41 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
           {topic.title}
         </h1>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-          <span>
-            Par <strong className="text-zinc-200">{topic.author.name}</strong>
-          </span>
-          {authorRoleBadge && (
+        <div className="mt-4 flex items-center gap-3">
+          <UserAvatar
+            name={topic.author.name}
+            image={topic.author.image}
+            size="lg"
+          />
+          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+            <strong className="text-sm text-zinc-200">
+              {topic.author.name}
+            </strong>
+            {authorRoleBadge && (
+              <span
+                className={`rounded border px-1.5 py-0.5 font-semibold ${authorRoleBadge.color}`}
+              >
+                {authorRoleBadge.label}
+              </span>
+            )}
             <span
-              className={`rounded border px-1.5 py-0.5 font-semibold ${authorRoleBadge.color}`}
+              className={`rounded border px-1.5 py-0.5 ${authorPrestige.badgeColor}`}
             >
-              {authorRoleBadge.label}
+              {authorPrestige.label}
             </span>
-          )}
-          <span
-            className={`rounded border px-1.5 py-0.5 ${authorPrestige.badgeColor}`}
-          >
-            {authorPrestige.label}
-          </span>
-          <span>• {new Date(topic.createdAt).toLocaleString("fr-FR")}</span>
+            <span>• {new Date(topic.createdAt).toLocaleString("fr-FR")}</span>
+          </div>
         </div>
 
         <p className="mt-6 whitespace-pre-wrap leading-relaxed text-zinc-200">
           {topic.content}
         </p>
+
+        {topic.author.bio && (
+          <p className="mt-6 border-t border-zinc-800/80 pt-3 text-xs italic whitespace-pre-line text-zinc-500">
+            {topic.author.bio}
+          </p>
+        )}
       </article>
 
       {/* Liste des réponses */}
@@ -133,25 +151,32 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
                 className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-                    <strong className="text-zinc-200">
-                      {comment.author.name}
-                    </strong>
-                    {roleBadge && (
+                  <div className="flex items-center gap-2.5">
+                    <UserAvatar
+                      name={comment.author.name}
+                      image={comment.author.image}
+                      size="md"
+                    />
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                      <strong className="text-zinc-200">
+                        {comment.author.name}
+                      </strong>
+                      {roleBadge && (
+                        <span
+                          className={`rounded border px-1.5 py-0.5 font-semibold ${roleBadge.color}`}
+                        >
+                          {roleBadge.label}
+                        </span>
+                      )}
                       <span
-                        className={`rounded border px-1.5 py-0.5 font-semibold ${roleBadge.color}`}
+                        className={`rounded border px-1.5 py-0.5 ${prestige.badgeColor}`}
                       >
-                        {roleBadge.label}
+                        {prestige.label}
                       </span>
-                    )}
-                    <span
-                      className={`rounded border px-1.5 py-0.5 ${prestige.badgeColor}`}
-                    >
-                      {prestige.label}
-                    </span>
-                    <span>
-                      • {new Date(comment.createdAt).toLocaleString("fr-FR")}
-                    </span>
+                      <span>
+                        • {new Date(comment.createdAt).toLocaleString("fr-FR")}
+                      </span>
+                    </div>
                   </div>
 
                   {canDeleteComment && (
@@ -165,6 +190,12 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
                   {comment.content}
                 </p>
+
+                {comment.author.bio && (
+                  <p className="mt-3 border-t border-zinc-800/70 pt-2 text-[11px] italic whitespace-pre-line text-zinc-500">
+                    {comment.author.bio}
+                  </p>
+                )}
               </div>
             );
           })

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import UserAvatar from "@/app/components/UserAvatar";
 
 export type LikerInfo = {
   id: string;
   name: string;
+  image: string | null;
   roleBadge: { label: string; color: string } | null;
   prestige: { label: string; badgeColor: string };
 };
@@ -87,6 +89,7 @@ export default function LikersSummary({ likers }: { likers: LikerInfo[] }) {
                   key={liker.id}
                   className="flex items-center justify-between rounded-lg border border-zinc-800/70 bg-zinc-900/40 px-3 py-2.5"
                 >
+                  <UserAvatar name={liker.name} image={liker.image} size="sm" />
                   <span className="text-sm font-medium text-zinc-100">
                     {liker.name}
                   </span>

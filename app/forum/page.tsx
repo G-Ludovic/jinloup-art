@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
 import NewTopicForm from "./NewTopicForm";
+import UserAvatar from "@/app/components/UserAvatar";
 
 async function TopicsList() {
   const topics = await prisma.topic.findMany({
@@ -11,6 +12,7 @@ async function TopicsList() {
       author: {
         select: {
           name: true,
+          image: true,
           role: true,
           postsCount: true,
           createdAt: true,
@@ -61,6 +63,11 @@ async function TopicsList() {
             </h2>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+              <UserAvatar
+                name={topic.author.name}
+                image={topic.author.image}
+                size="sm"
+              />
               <span>
                 Par{" "}
                 <strong className="text-zinc-200">{topic.author.name}</strong>

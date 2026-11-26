@@ -70,3 +70,37 @@ export function getRoleBadge(role: string) {
       return null;
   }
 }
+
+export function getPrestigeProgress(
+  postsCount: number,
+  createdAt: Date | string,
+) {
+  const joinedDate =
+    typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+  const daysMember = Math.max(
+    0,
+    Math.floor((Date.now() - joinedDate.getTime()) / (1000 * 60 * 60 * 24)),
+  );
+  const points = postsCount * 10 + daysMember;
+
+  // PRESTIGE_TIERS est trié du plus haut au plus bas
+  const current =
+    PRESTIGE_TIERS.find((tier) => points >= tier.minPoints) ??
+    PRESTIGE_TIERS[PRESTIGE_TIERS.length - 1];
+
+  const currentIndex = PRESTIGE_TIERS.indexOf(current);
+  const nextTier = currentIndex > 0 ? PRESTIGE_TIERS[currentIndex - 1] : null;
+
+  if (!nextTier) {
+    return { current, nextTier: null, points, progressPercent: 100 };
+  }
+
+  const range = nextTier.minPoints - current.minPoints;
+  const gained = points - current.minPoints;
+  const progressPercent = Math.min(
+    100,
+    Math.max(0, Math.round((gained / range) * 100)),
+  );
+
+  return { current, nextTier, points, progressPercent };
+}
