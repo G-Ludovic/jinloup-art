@@ -8,7 +8,6 @@ import { prisma } from "@/lib/prisma";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
 import LikeButton from "../LikeButton";
 import LikersSummary, { type LikerInfo } from "../LikersSummary";
-import UserAvatar from "@/app/components/UserAvatar";
 
 async function ArtworkDetail({
   params,
