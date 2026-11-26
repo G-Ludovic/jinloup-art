@@ -25,9 +25,16 @@ export default function NewTopicForm() {
         href="/connexion"
         className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-900"
       >
-        Connectez-vous pour poster
+        Connectez-vous pour répondre
       </Link>
     );
+  }
+
+  const isStaff =
+    session.user.role === "ADMIN" || session.user.role === "MODERATOR";
+
+  if (!isStaff) {
+    return null; // Un membre classique ne voit pas le bouton "+ Nouveau sujet"
   }
 
   return (

@@ -9,6 +9,7 @@ import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
 import AddArtworkForm from "./AddArtworkForm";
 import RoleSelect from "./RoleSelect";
 import DeleteArtworkButton from "./DeleteArtworkButton";
+import TopicManagerRow from "./TopicManagerRow";
 
 async function AdminDashboard() {
   const session = await auth.api.getSession({
@@ -28,7 +29,7 @@ async function AdminDashboard() {
 
   const isAdmin = session.user.role === "ADMIN";
 
-  const [artworks, users, topicsCount, commentsCount] = await Promise.all([
+  const [artworks, users, topics, commentsCount] = await Promise.all([
     prisma.artwork.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
@@ -41,7 +42,13 @@ async function AdminDashboard() {
         createdAt: true,
       },
     }),
-    prisma.topic.count(),
+    prisma.topic.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: { select: { name: true } },
+        _count: { select: { comments: true } },
+      },
+    }),
     prisma.comment.count(),
   ]);
 
@@ -63,7 +70,9 @@ async function AdminDashboard() {
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
           <p className="text-xs text-zinc-400">Sujets forum</p>
-          <p className="mt-1 text-2xl font-bold text-zinc-100">{topicsCount}</p>
+          <p className="mt-1 text-2xl font-bold text-zinc-100">
+            {topics.length}
+          </p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
           <p className="text-xs text-zinc-400">Réponses forum</p>
@@ -121,6 +130,35 @@ async function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Gestion des Sujets du Forum (Admin & Modérateur) */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-zinc-100">
+          Sujets du Forum ({topics.length})
+        </h2>
+
+        {topics.length === 0 ? (
+          <p className="mt-4 text-sm text-zinc-400">
+            Aucun sujet pour le moment.
+          </p>
+        ) : (
+          <div className="mt-4 divide-y divide-zinc-800">
+            {topics.map((topic) => (
+              <TopicManagerRow
+                key={topic.id}
+                topic={{
+                  id: topic.id,
+                  title: topic.title,
+                  category: topic.category,
+                  content: topic.content,
+                  authorName: topic.author.name,
+                  commentsCount: topic._count.comments,
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Gestion des Membres & Grades */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:p-6">

@@ -133,3 +133,80 @@ export async function updateUserRole(userId: string, newRole: string) {
 
   revalidatePath("/admin");
 }
+
+async function requireStaff() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (
+    !session ||
+    (session.user.role !== "ADMIN" && session.user.role !== "MODERATOR")
+  ) {
+    throw new Error("Action réservée à l'équipe de modération.");
+  }
+
+  return session;
+}
+
+const ALLOWED_TOPIC_CATEGORIES = [
+  "Discussion",
+  "Critique d'œuvre",
+  "Technique",
+  "Inspiration",
+];
+
+export async function updateTopic(
+  _prevState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  try {
+    await requireStaff();
+  } catch {
+    return { error: "Action réservée aux administrateurs et modérateurs." };
+  }
+
+  const topicId = String(formData.get("topicId") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const category = String(formData.get("category") ?? "").trim();
+  const content = String(formData.get("content") ?? "").trim();
+
+  if (!topicId) {
+    return { error: "Sujet introuvable." };
+  }
+  if (title.length < 3 || title.length > 120) {
+    return { error: "Le titre doit contenir entre 3 et 120 caractères." };
+  }
+  if (!ALLOWED_TOPIC_CATEGORIES.includes(category)) {
+    return { error: "Catégorie invalide." };
+  }
+  if (content.length < 10) {
+    return { error: "Le message doit contenir au moins 10 caractères." };
+  }
+
+  try {
+    await prisma.topic.update({
+      where: { id: topicId },
+      data: { title, category, content },
+    });
+  } catch (err) {
+    console.error("Erreur modification sujet:", err);
+    return { error: "Impossible de modifier ce sujet." };
+  }
+
+  revalidatePath("/forum");
+  revalidatePath(`/forum/${topicId}`);
+  revalidatePath("/admin");
+  return { error: null, successMessage: "Sujet mis à jour !" };
+}
+
+export async function deleteTopicAdmin(topicId: string) {
+  await requireStaff();
+
+  await prisma.topic.delete({
+    where: { id: topicId },
+  });
+
+  revalidatePath("/forum");
+  revalidatePath("/admin");
+}

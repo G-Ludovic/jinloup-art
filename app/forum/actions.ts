@@ -30,6 +30,12 @@ export async function createTopic(
     return { error: "Vous devez être connecté pour créer un sujet." };
   }
 
+  if (session.user.role !== "ADMIN" && session.user.role !== "MODERATOR") {
+    return {
+      error: "Seuls les administrateurs et modérateurs peuvent créer un sujet.",
+    };
+  }
+
   const title = String(formData.get("title") ?? "").trim();
   const category = String(formData.get("category") ?? "").trim();
   const content = String(formData.get("content") ?? "").trim();
@@ -72,6 +78,7 @@ export async function createTopic(
   }
 
   revalidatePath("/forum");
+  revalidatePath("/admin");
   redirect(`/forum/${topicId}`);
 }
 
