@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { connection } from "next/server";
+import ScrollToHash from "./ScrollToHash";
 
 type ArtworkCardItem = {
   id: string;
@@ -98,7 +99,11 @@ async function GalleriesContent() {
       </div>
 
       {/* Section 2 : La Galerie des Membres */}
-      <div className="border-t border-zinc-800 pt-12">
+      <div
+        id="galerie-membres"
+        className="scroll-mt-12 border-t border-zinc-800 pt-12"
+      >
+        <ScrollToHash />
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
@@ -144,6 +149,29 @@ export default function GaleriePage() {
         Découvrez les œuvres originales de Jinloup ainsi que les créations de
         nos membres.
       </p>
+
+      {/* Raccourci rapide vers la Galerie des Membres */}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3 text-sm">
+        <p className="text-zinc-300">
+          Envie de voir directement les créations de la communauté ou de
+          partager les vôtres ?
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <a
+            href="#galerie-membres"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-400"
+          >
+            ↓ Aller à la Galerie des Membres
+          </a>
+          <Link
+            href="/galerie/proposer"
+            className="inline-flex items-center rounded-lg border border-zinc-700 bg-zinc-900 px-3.5 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-amber-500 hover:text-amber-400"
+          >
+            + Proposer mon œuvre
+          </Link>
+        </div>
+      </div>
 
       <Suspense
         fallback={

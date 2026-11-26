@@ -3,42 +3,90 @@ import Image from "next/image";
 
 export default function HomePage() {
   return (
-    <section className="flex flex-col-reverse items-center justify-between gap-8 py-6 text-center md:flex-row md:gap-10 md:py-12 md:text-left">
-      <div className="max-w-2xl">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
-          L&apos;art et la communauté,{" "}
-          <span className="text-amber-400">réunis</span>.
-        </h1>
-        <p className="mt-4 text-base text-zinc-400 sm:text-lg">
-          Explorez notre collection d&apos;œuvres sélectionnées, discutez avec
-          d&apos;autres passionnés et évoluez au sein de la communauté.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3 sm:gap-4 md:justify-start">
-          <Link
-            href="/galerie"
-            className="w-full rounded-lg bg-amber-500 px-5 py-2.5 font-semibold text-zinc-950 transition hover:bg-amber-400 sm:w-auto"
-          >
-            Visiter la galerie
-          </Link>
-          <Link
-            href="/forum"
-            className="w-full rounded-lg border border-zinc-700 px-5 py-2.5 font-semibold transition hover:bg-zinc-900 sm:w-auto"
-          >
-            Accéder au forum
-          </Link>
+    <div className="space-y-16">
+      {/* Bloc d'accueil principal */}
+      <section className="flex flex-col-reverse items-center justify-between gap-8 py-6 text-center md:flex-row md:gap-10 md:py-12 md:text-left">
+        <div className="max-w-2xl">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
+            L&apos;art et la communauté,{" "}
+            <span className="text-amber-400">réunis</span>.
+          </h1>
+          <p className="mt-4 text-base text-zinc-400 sm:text-lg">
+            Explorez notre collection d&apos;œuvres sélectionnées, discutez avec
+            d&apos;autres passionnés et évoluez au sein de la communauté.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3 sm:gap-4 md:justify-start">
+            <Link
+              href="/galerie"
+              className="w-full rounded-lg bg-amber-500 px-5 py-2.5 font-semibold text-zinc-950 transition hover:bg-amber-400 sm:w-auto"
+            >
+              Visiter la galerie
+            </Link>
+            <Link
+              href="/forum"
+              className="w-full rounded-lg border border-zinc-700 px-5 py-2.5 font-semibold transition hover:bg-zinc-900 sm:w-auto"
+            >
+              Accéder au forum
+            </Link>
+          </div>
         </div>
-      </div>
 
-      <div className="relative shrink-0">
-        <Image
-          src="/logo-loup-mystique.webp"
-          alt="Emblème Jinloup.Art"
-          width={220}
-          height={220}
-          priority
-          className="h-36 w-36 rounded-full object-cover shadow-2xl shadow-indigo-500/20 ring-1 ring-indigo-500/30 sm:h-48 sm:w-48 md:h-56 md:w-56"
-        />
-      </div>
-    </section>
+        <div className="relative shrink-0">
+          <Image
+            src="/logo-loup-mystique.webp"
+            alt="Emblème Jinloup.Art"
+            width={220}
+            height={220}
+            priority
+            className="h-36 w-36 rounded-full object-cover shadow-2xl shadow-indigo-500/20 ring-1 ring-indigo-500/30 sm:h-48 sm:w-48 md:h-56 md:w-56"
+          />
+        </div>
+      </section>
+
+      {/* Article : Mise en avant de la Galerie des Membres */}
+      <article className="rounded-2xl border border-indigo-500/30 bg-zinc-900/50 p-6 sm:p-8">
+        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+          <div className="max-w-2xl space-y-3">
+            <span className="inline-block rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs font-semibold text-indigo-300">
+              Nouveau • Espace Créateurs
+            </span>
+
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-100 sm:text-3xl">
+              Exposez vos propres œuvres dans la{" "}
+              <span className="text-amber-400">Galerie des Membres</span>
+            </h2>
+
+            <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
+              Vous dessinez, peignez ou créez en digital ? Partagez vos
+              créations avec la communauté ! Chaque proposition est vérifiée par
+              notre équipe avant publication, puis ouverte aux mentions{" "}
+              <strong>J&apos;aime</strong> et aux <strong>commentaires</strong>{" "}
+              des autres membres.
+            </p>
+
+            <ul className="flex flex-wrap gap-x-6 gap-y-2 pt-1 text-xs text-zinc-400">
+              <li>✓ Envoi simple et rapide</li>
+              <li>✓ Notification dès validation</li>
+              <li>✓ Points de prestige offerts</li>
+            </ul>
+          </div>
+
+          <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
+            <Link
+              href="/galerie#galerie-membres"
+              className="rounded-lg bg-amber-500 px-5 py-2.5 text-center text-sm font-semibold text-zinc-950 transition hover:bg-amber-400"
+            >
+              Découvrir la Galerie des Membres
+            </Link>
+            <Link
+              href="/galerie/proposer"
+              className="rounded-lg border border-zinc-700 px-5 py-2.5 text-center text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
+            >
+              + Proposer mon œuvre
+            </Link>
+          </div>
+        </div>
+      </article>
+    </div>
   );
 }
