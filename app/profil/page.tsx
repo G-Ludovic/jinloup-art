@@ -34,6 +34,17 @@ async function ProfilContent() {
           likes: true,
         },
       },
+      artworks: {
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          status: true,
+          rejectionReason: true,
+          createdAt: true,
+        },
+      },
     },
   });
 
@@ -129,6 +140,53 @@ async function ProfilContent() {
           </p>
         </div>
       </div>
+
+      {user.artworks.length > 0 && (
+        <div className="mt-8 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <h2 className="text-lg font-semibold text-zinc-100">
+            Mes œuvres proposées ({user.artworks.length})
+          </h2>
+
+          <div className="mt-4 divide-y divide-zinc-800">
+            {user.artworks.map((art) => (
+              <div
+                key={art.id}
+                className="flex flex-wrap items-center justify-between gap-3 py-3"
+              >
+                <div>
+                  <a
+                    href={`/galerie/${art.slug}`}
+                    className="font-medium text-zinc-100 hover:text-amber-400"
+                  >
+                    {art.title}
+                  </a>
+                  {art.status === "REJECTED" && art.rejectionReason && (
+                    <p className="mt-1 text-xs text-rose-300">
+                      Motif : {art.rejectionReason}
+                    </p>
+                  )}
+                </div>
+
+                {art.status === "APPROVED" && (
+                  <span className="rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-300">
+                    Publiée
+                  </span>
+                )}
+                {art.status === "PENDING" && (
+                  <span className="rounded border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-300">
+                    En attente
+                  </span>
+                )}
+                {art.status === "REJECTED" && (
+                  <span className="rounded border border-rose-500/40 bg-rose-500/10 px-2 py-0.5 text-xs text-rose-300">
+                    Refusée
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Formulaire d'édition */}
       <EditProfileForm

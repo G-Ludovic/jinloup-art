@@ -275,3 +275,87 @@ export async function deleteUserAccount(targetUserId: string) {
   revalidatePath("/forum");
   revalidatePath("/galerie");
 }
+
+export async function approveMemberArtwork(artworkId: string) {
+  await requireAdmin();
+
+  const artwork = await prisma.artwork.findUnique({
+    where: { id: artworkId },
+    select: { id: true, title: true, slug: true, status: true, authorId: true },
+  });
+
+  if (!artwork || artwork.status !== "PENDING") {
+    throw new Error("Œuvre introuvable ou déjà traitée.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.artwork.update({
+      where: { id: artworkId },
+      data: {
+        status: "APPROVED",
+        rejectionReason: null,
+      },
+    });
+
+    if (artwork.authorId) {
+      await tx.user.update({
+        where: { id: artwork.authorId },
+        data: { postsCount: { increment: 1 } },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: artwork.authorId,
+          message: `🎉 Bonne nouvelle ! Votre œuvre « ${artwork.title} » a été acceptée dans la Galerie des Membres !`,
+          link: `/galerie/${artwork.slug}`,
+        },
+      });
+    }
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/galerie");
+  revalidatePath(`/galerie/${artwork.slug}`);
+  revalidatePath("/membres");
+  revalidatePath("/profil");
+}
+
+export async function rejectMemberArtwork(artworkId: string, reason?: string) {
+  await requireAdmin();
+
+  const artwork = await prisma.artwork.findUnique({
+    where: { id: artworkId },
+    select: { id: true, title: true, status: true, authorId: true },
+  });
+
+  if (!artwork || artwork.status !== "PENDING") {
+    throw new Error("Œuvre introuvable ou déjà traitée.");
+  }
+
+  const cleanReason = (reason ?? "").trim() || null;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.artwork.update({
+      where: { id: artworkId },
+      data: {
+        status: "REJECTED",
+        rejectionReason: cleanReason,
+      },
+    });
+
+    if (artwork.authorId) {
+      await tx.notification.create({
+        data: {
+          userId: artwork.authorId,
+          message: cleanReason
+            ? `❌ Votre proposition « ${artwork.title} » n'a pas été retenue : ${cleanReason}`
+            : `❌ Votre proposition « ${artwork.title} » n'a pas été retenue.`,
+          link: "/profil",
+        },
+      });
+    }
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/profil");
+}

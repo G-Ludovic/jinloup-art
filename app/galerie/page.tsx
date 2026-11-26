@@ -2,27 +2,21 @@ import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { connection } from "next/server";
 
-async function ArtworkGrid() {
-  const artworks = await prisma.artwork.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: {
-        select: { likes: true, artworkComments: true },
-      },
-    },
-  });
+type ArtworkCardItem = {
+  id: string;
+  title: string;
+  slug: string;
+  artistName: string;
+  imageUrl: string;
+  year: number | null;
+  _count: { likes: number; artworkComments: number };
+};
 
-  if (artworks.length === 0) {
-    return (
-      <p className="mt-8 rounded-lg border border-zinc-800 p-6 text-zinc-400">
-        Aucune œuvre exposée pour le moment.
-      </p>
-    );
-  }
-
+function ArtworkGridSection({ artworks }: { artworks: ArtworkCardItem[] }) {
   return (
-    <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {artworks.map((artwork) => (
         <Link
           key={artwork.id}
@@ -34,6 +28,7 @@ async function ArtworkGrid() {
               src={artwork.imageUrl}
               alt={artwork.title}
               fill
+              unoptimized={artwork.imageUrl.startsWith("data:")}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover object-top transition duration-300 group-hover:scale-105"
             />
@@ -41,9 +36,9 @@ async function ArtworkGrid() {
 
           <div className="flex items-center justify-between gap-3 p-4">
             <div className="min-w-0">
-              <h2 className="truncate text-lg font-semibold text-zinc-100 group-hover:text-amber-400">
+              <h3 className="truncate text-lg font-semibold text-zinc-100 group-hover:text-amber-400">
                 {artwork.title}
-              </h2>
+              </h3>
               <p className="mt-1 truncate text-sm text-zinc-400">
                 Par {artwork.artistName}
                 {artwork.year ? ` • ${artwork.year}` : ""}
@@ -61,20 +56,101 @@ async function ArtworkGrid() {
   );
 }
 
+async function GalleriesContent() {
+  await connection();
+  const [jinloupArtworks, memberArtworks] = await Promise.all([
+    prisma.artwork.findMany({
+      where: { isMemberArtwork: false, status: "APPROVED" },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { likes: true, artworkComments: true } },
+      },
+    }),
+    prisma.artwork.findMany({
+      where: { isMemberArtwork: true, status: "APPROVED" },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { likes: true, artworkComments: true } },
+      },
+    }),
+  ]);
+
+  return (
+    <div className="mt-8 space-y-16">
+      {/* Section 1 : Les œuvres de Jinloup */}
+      <div>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-100">
+            Les œuvres de <span className="text-amber-400">Jinloup</span>
+          </h2>
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs text-amber-300">
+            {jinloupArtworks.length}
+          </span>
+        </div>
+
+        {jinloupArtworks.length === 0 ? (
+          <p className="mt-6 rounded-lg border border-zinc-800 p-6 text-zinc-400">
+            Aucune œuvre exposée pour le moment.
+          </p>
+        ) : (
+          <ArtworkGridSection artworks={jinloupArtworks} />
+        )}
+      </div>
+
+      {/* Section 2 : La Galerie des Membres */}
+      <div className="border-t border-zinc-800 pt-12">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold tracking-tight text-zinc-100">
+                La Galerie des Membres
+              </h2>
+              <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 text-xs text-indigo-300">
+                {memberArtworks.length}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-zinc-400">
+              Les créations partagées par la communauté et validées par
+              l&apos;équipe.
+            </p>
+          </div>
+
+          <Link
+            href="/galerie/proposer"
+            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400"
+          >
+            + Proposer mon œuvre
+          </Link>
+        </div>
+
+        {memberArtworks.length === 0 ? (
+          <p className="mt-6 rounded-lg border border-zinc-800 bg-zinc-900/30 p-6 text-sm text-zinc-400">
+            Aucune œuvre de membre publiée pour le moment. Soyez le premier à
+            proposer la vôtre !
+          </p>
+        ) : (
+          <ArtworkGridSection artworks={memberArtworks} />
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function GaleriePage() {
   return (
     <section>
       <h1 className="text-3xl font-bold tracking-tight">Galerie d&apos;Art</h1>
       <p className="mt-2 text-zinc-400">
-        Découvrez les œuvres exposées par nos artistes et membres.
+        Découvrez les œuvres originales de Jinloup ainsi que les créations de
+        nos membres.
       </p>
 
       <Suspense
         fallback={
-          <p className="mt-8 text-zinc-400">Chargement des œuvres...</p>
+          <p className="mt-8 text-zinc-400">Chargement des galeries...</p>
         }
       >
-        <ArtworkGrid />
+        <GalleriesContent />
       </Suspense>
     </section>
   );

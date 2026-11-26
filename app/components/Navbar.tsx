@@ -4,6 +4,7 @@ import Image from "next/image";
 import NavLinks, { type NavItem } from "./NavLinks";
 import UserMenu from "./UserMenu";
 import MobileMenu from "./MobileMenu";
+import NotificationBell from "./NotificationBell";
 
 const navLinks: NavItem[] = [
   { href: "/", label: "Accueil" },
@@ -60,6 +61,7 @@ export default function Navbar() {
 
         {/* Version Mobile & Tablette (< 1024px) */}
         <Suspense fallback={null}>
+          <NotificationBell />
           <MobileMenu links={navLinks} />
         </Suspense>
       </nav>

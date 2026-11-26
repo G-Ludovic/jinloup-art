@@ -11,6 +11,7 @@ import RoleSelect from "./RoleSelect";
 import DeleteArtworkButton from "./DeleteArtworkButton";
 import TopicManagerRow from "./TopicManagerRow";
 import UserModerationActions from "./UserModerationActions";
+import PendingArtworkCard from "./PendingArtworkCard";
 
 async function AdminDashboard() {
   const session = await auth.api.getSession({
@@ -54,6 +55,9 @@ async function AdminDashboard() {
     prisma.comment.count(),
   ]);
 
+  const pendingArtworks = artworks.filter((a) => a.status === "PENDING");
+  const approvedArtworks = artworks.filter((a) => a.status === "APPROVED");
+
   return (
     <div className="mt-8 space-y-10">
       {/* Statistiques */}
@@ -87,15 +91,34 @@ async function AdminDashboard() {
       {/* Gestion Galerie (Admin uniquement) */}
       {isAdmin && (
         <div className="space-y-6">
+          {/* Propositions des membres en attente */}
+          <div className="rounded-xl border border-amber-500/30 bg-zinc-900/50 p-4 sm:p-6">
+            <h2 className="text-lg font-semibold text-zinc-100">
+              Propositions en attente de validation ({pendingArtworks.length})
+            </h2>
+
+            {pendingArtworks.length === 0 ? (
+              <p className="mt-3 text-sm text-zinc-400">
+                Aucune œuvre en attente pour le moment.
+              </p>
+            ) : (
+              <div className="mt-4 space-y-4">
+                {pendingArtworks.map((art) => (
+                  <PendingArtworkCard key={art.id} artwork={art} />
+                ))}
+              </div>
+            )}
+          </div>
+
           <AddArtworkForm />
 
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-zinc-100">
-              Œuvres de la galerie ({artworks.length})
+              Œuvres publiées ({approvedArtworks.length})
             </h2>
 
             <div className="mt-4 divide-y divide-zinc-800">
-              {artworks.map((art) => (
+              {approvedArtworks.map((art) => (
                 <div
                   key={art.id}
                   className="flex items-center justify-between gap-3 py-3"
@@ -106,17 +129,25 @@ async function AdminDashboard() {
                         src={art.imageUrl}
                         alt={art.title}
                         fill
+                        unoptimized={art.imageUrl.startsWith("data:")}
                         sizes="64px"
                         className="object-cover"
                       />
                     </div>
                     <div className="min-w-0">
-                      <Link
-                        href={`/galerie/${art.slug}`}
-                        className="block truncate font-medium text-zinc-100 hover:text-amber-400"
-                      >
-                        {art.title}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/galerie/${art.slug}`}
+                          className="truncate font-medium text-zinc-100 hover:text-amber-400"
+                        >
+                          {art.title}
+                        </Link>
+                        {art.isMemberArtwork && (
+                          <span className="shrink-0 rounded border border-indigo-500/30 bg-indigo-500/10 px-1.5 py-0.5 text-[10px] text-indigo-300">
+                            Membre
+                          </span>
+                        )}
+                      </div>
                       <p className="truncate text-xs text-zinc-400">
                         {art.artistName} {art.year ? `• ${art.year}` : ""}
                       </p>

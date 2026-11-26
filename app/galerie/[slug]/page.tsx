@@ -77,6 +77,12 @@ async function ArtworkDetail({
   const isStaff =
     session?.user.role === "ADMIN" || session?.user.role === "MODERATOR";
 
+  const isAuthor = Boolean(session && artwork.authorId === session.user.id);
+
+  if (artwork.status !== "APPROVED" && !isStaff && !isAuthor) {
+    notFound();
+  }
+
   return (
     <>
       <article className="mt-6 grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
@@ -89,6 +95,7 @@ async function ArtworkDetail({
             priority
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="h-auto max-h-[75vh] w-auto max-w-full rounded-xl border border-zinc-800 bg-zinc-900 shadow-lg"
+            unoptimized={artwork.imageUrl.startsWith("data:")}
           />
         </div>
 

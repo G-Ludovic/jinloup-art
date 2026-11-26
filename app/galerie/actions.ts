@@ -142,3 +142,118 @@ export async function deleteArtworkComment(commentId: string, slug: string) {
   revalidatePath(`/galerie/${slug}`);
   revalidatePath("/galerie");
 }
+
+export type SubmitArtworkState = {
+  error: string | null;
+  successMessage?: string | null;
+};
+
+function slugifyTitle(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+const ALLOWED_IMAGE_URI = /^data:image\/(webp|png|jpeg);base64,/;
+
+export async function submitMemberArtwork(
+  _prevState: SubmitArtworkState,
+  formData: FormData,
+): Promise<SubmitArtworkState> {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return { error: "Vous devez être connecté pour proposer une œuvre." };
+  }
+
+  const title = String(formData.get("title") ?? "").trim();
+  const medium = String(formData.get("medium") ?? "").trim() || null;
+  const yearRaw = String(formData.get("year") ?? "").trim();
+  const year = yearRaw ? Number.parseInt(yearRaw, 10) : null;
+  const description = String(formData.get("description") ?? "").trim();
+  const imageUrl = String(formData.get("imageUrl") ?? "").trim();
+
+  if (title.length < 2 || title.length > 100) {
+    return { error: "Le titre doit contenir entre 2 et 100 caractères." };
+  }
+  if (description.length < 5 || description.length > 1000) {
+    return {
+      error: "La description doit contenir entre 5 et 1000 caractères.",
+    };
+  }
+  if (yearRaw && Number.isNaN(year)) {
+    return { error: "L'année doit être un nombre valide." };
+  }
+
+  const isSafeDataUri =
+    ALLOWED_IMAGE_URI.test(imageUrl) && imageUrl.length <= 650_000;
+  const isSafeHttpsUrl =
+    imageUrl.startsWith("https://") && imageUrl.length <= 500;
+
+  if (!isSafeDataUri && !isSafeHttpsUrl) {
+    return {
+      error: "Veuillez sélectionner une image valide (PNG, JPG ou WebP).",
+    };
+  }
+
+  let slug = slugifyTitle(title) || "oeuvre-membre";
+  const existing = await prisma.artwork.findUnique({ where: { slug } });
+  if (existing) {
+    slug = `${slug}-${Date.now().toString().slice(-4)}`;
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.artwork.create({
+        data: {
+          title,
+          slug,
+          artistName: session.user.name,
+          imageUrl,
+          description,
+          medium,
+          year,
+          isMemberArtwork: true,
+          status: "PENDING",
+          authorId: session.user.id,
+        },
+      });
+
+      // Notifie tous les Admins et Modérateurs
+      const staffUsers = await tx.user.findMany({
+        where: {
+          role: { in: ["ADMIN", "MODERATOR"] },
+          banned: false,
+        },
+        select: { id: true },
+      });
+
+      if (staffUsers.length > 0) {
+        await tx.notification.createMany({
+          data: staffUsers.map((staff) => ({
+            userId: staff.id,
+            message: `🎨 ${session.user.name} propose une œuvre : « ${title} »`,
+            link: "/admin",
+          })),
+        });
+      }
+    });
+  } catch (err) {
+    console.error("Erreur soumission œuvre:", err);
+    return { error: "Impossible d'envoyer votre proposition pour le moment." };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/profil");
+  return {
+    error: null,
+    successMessage:
+      "Votre œuvre a bien été envoyée ! Elle sera visible dans la Galerie des Membres après validation.",
+  };
+}
