@@ -57,15 +57,16 @@ async function ArtworkDetail({
   }));
 
   return (
-    <article className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-2">
-      <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+    <article className="mt-6 grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
+      <div className="flex items-center justify-center">
         <Image
           src={artwork.imageUrl}
           alt={artwork.title}
-          fill
+          width={1200}
+          height={1200}
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-cover"
+          className="h-auto max-h-[75vh] w-auto max-w-full rounded-xl border border-zinc-800 bg-zinc-900 shadow-lg"
         />
       </div>
 
