@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useToast } from "@/app/components/ToastProvider";
+import Link from "next/link";
 
 export default function ConnexionPage() {
   const router = useRouter();
@@ -196,9 +197,19 @@ export default function ConnexionPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300">
-            Mot de passe
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-medium text-zinc-300">
+              Mot de passe
+            </label>
+            {!isSignUp && (
+              <Link
+                href="/mot-de-passe-oublie"
+                className="text-xs text-amber-400 hover:underline"
+              >
+                Mot de passe oublié ?
+              </Link>
+            )}
+          </div>
           <input
             type="password"
             required

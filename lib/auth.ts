@@ -4,7 +4,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "./prisma";
 import { after } from "next/server";
-import { sendVerificationEmail } from "./mail";
+import { sendResetPasswordEmail, sendVerificationEmail } from "./mail";
 
 export const auth = betterAuth({
   baseURL: {
@@ -20,6 +20,19 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    async sendResetPassword({ user, url }) {
+      after(async () => {
+        try {
+          await sendResetPasswordEmail({
+            to: user.email,
+            name: user.name,
+            url,
+          });
+        } catch (err) {
+          console.error("Erreur envoi email réinitialisation:", err);
+        }
+      });
+    },
   },
   emailVerification: {
     sendOnSignUp: true,
