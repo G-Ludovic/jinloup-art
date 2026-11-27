@@ -39,10 +39,14 @@ export default function NotificationBell() {
     if (!userId) return;
 
     const initialLoad = setTimeout(loadNotifications, 0);
-    const interval = setInterval(loadNotifications, 30_000);
+    const onFocus = () => {
+      loadNotifications();
+    };
+    window.addEventListener("focus", onFocus);
+
     return () => {
       clearTimeout(initialLoad);
-      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
     };
   }, [loadNotifications, userId]);
 
