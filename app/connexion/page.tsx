@@ -3,21 +3,43 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { useToast } from "../components/ToastProvider";
+import { useToast } from "@/app/components/ToastProvider";
 
 export default function ConnexionPage() {
   const router = useRouter();
+  const toast = useToast();
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const toast = useToast();
+  const [resending, setResending] = useState(false);
+
+  async function handleResendEmail() {
+    if (!email) return;
+    setResending(true);
+    try {
+      const { error } = await authClient.sendVerificationEmail({
+        email,
+        callbackURL: "/profil",
+      });
+      if (error) {
+        toast.error("Impossible de renvoyer l'email pour le moment.");
+      } else {
+        toast.success("Nouveau lien de confirmation envoyé !");
+      }
+    } finally {
+      setResending(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNeedsVerification(false);
     setLoading(true);
 
     try {
@@ -26,31 +48,81 @@ export default function ConnexionPage() {
           email,
           password,
           name,
+          callbackURL: "/profil",
         });
         if (error) {
           setError(error.message ?? "Impossible de créer le compte.");
           return;
         }
-        toast.success(
-          "Compte créé avec succès ! Vous pouvez maintenant vous connecter.",
-        );
-      } else {
-        const { error } = await authClient.signIn.email({
-          email,
-          password,
-        });
-        if (error) {
-          setError(error.message ?? "Email ou mot de passe incorrect.");
-          return;
-        }
-        toast.success("Connexion réussie ! Bienvenue sur Jinloup-Art.");
+        setVerificationSent(true);
+        toast.info("Email de confirmation envoyé ! Vérifiez votre boîte mail.");
+        return;
       }
 
+      const { error } = await authClient.signIn.email({
+        email,
+        password,
+      });
+
+      if (error) {
+        if (error.status === 403 || error.code === "EMAIL_NOT_VERIFIED") {
+          setNeedsVerification(true);
+          setError(
+            "Votre adresse email n'est pas encore confirmée. Cliquez sur le lien reçu par mail.",
+          );
+          return;
+        }
+        setError(error.message ?? "Email ou mot de passe incorrect.");
+        return;
+      }
+
+      toast.success("Connexion réussie ! Bon retour parmi nous.");
       router.push("/profil");
       router.refresh();
     } finally {
       setLoading(false);
     }
+  }
+
+  if (verificationSent) {
+    return (
+      <section className="mx-auto max-w-md rounded-xl border border-amber-500/30 bg-zinc-900/50 p-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-2xl">
+          📧
+        </div>
+        <h1 className="mt-4 text-2xl font-bold text-zinc-100">
+          Vérifiez votre boîte mail
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+          Un lien de confirmation vient d&apos;être envoyé à{" "}
+          <strong className="text-amber-400">{email}</strong>. Cliquez dessus
+          pour activer votre compte (pensez à vérifier vos spams).
+        </p>
+
+        <div className="mt-6 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={handleResendEmail}
+            disabled={resending}
+            className="rounded-lg border border-zinc-700 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800 disabled:opacity-50"
+          >
+            {resending ? "Envoi..." : "Renvoyer l'email de confirmation"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setVerificationSent(false);
+              setIsSignUp(false);
+              setError(null);
+            }}
+            className="text-xs text-amber-400 hover:underline"
+          >
+            Retour à la connexion
+          </button>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -61,6 +133,7 @@ export default function ConnexionPage() {
           onClick={() => {
             setIsSignUp(false);
             setError(null);
+            setNeedsVerification(false);
           }}
           className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
             !isSignUp
@@ -75,6 +148,7 @@ export default function ConnexionPage() {
           onClick={() => {
             setIsSignUp(true);
             setError(null);
+            setNeedsVerification(false);
           }}
           className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
             isSignUp
@@ -87,7 +161,7 @@ export default function ConnexionPage() {
       </div>
 
       <h1 className="mt-6 text-2xl font-bold tracking-tight">
-        {isSignUp ? "Rejoindre Atelier.Art" : "Bon retour parmi nous"}
+        {isSignUp ? "Rejoindre Jinloup.Art" : "Bon retour parmi nous"}
       </h1>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -137,9 +211,19 @@ export default function ConnexionPage() {
         </div>
 
         {error && (
-          <p className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-300">
-            {error}
-          </p>
+          <div className="space-y-2 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-300">
+            <p>{error}</p>
+            {needsVerification && (
+              <button
+                type="button"
+                onClick={handleResendEmail}
+                disabled={resending}
+                className="text-xs font-semibold text-amber-400 hover:underline disabled:opacity-50"
+              >
+                {resending ? "Envoi..." : "→ Renvoyer le lien de confirmation"}
+              </button>
+            )}
+          </div>
         )}
 
         <button
