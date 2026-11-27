@@ -87,6 +87,22 @@ export default function HomePage() {
           </div>
         </div>
       </article>
+      {/* Mini encart Nouveautés */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-zinc-800 bg-zinc-900/30 px-6 py-4 text-sm">
+        <p className="text-zinc-300">
+          <span className="mr-2 rounded bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-400">
+            v1.3
+          </span>
+          Confirmation par email, mot de passe oublié et galerie optimisée en
+          WebP !
+        </p>
+        <Link
+          href="/nouveautes"
+          className="text-xs font-semibold text-amber-400 hover:underline"
+        >
+          Voir toutes les mises à jour →
+        </Link>
+      </div>
     </div>
   );
 }

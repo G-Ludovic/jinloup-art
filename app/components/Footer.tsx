@@ -5,7 +5,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-zinc-800 bg-zinc-950 text-zinc-400">
       <div className="mx-auto max-w-6xl px-6 py-10">
-        {/* Étage du haut : Marque + Colonne Navigation */}
+        {/* Étage du haut : Marque + Colonnes Navigation & Ressources */}
         <div className="flex flex-col justify-between gap-8 sm:flex-row">
           <div className="max-w-xs space-y-2">
             <Link
@@ -29,30 +29,58 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-200">
-              Navigation
-            </h3>
-            <nav className="flex flex-col gap-2 text-sm">
-              <Link
-                href="/galerie"
-                className="w-fit transition hover:text-amber-400"
-              >
-                Galerie
-              </Link>
-              <Link
-                href="/forum"
-                className="w-fit transition hover:text-amber-400"
-              >
-                Forum
-              </Link>
-              <Link
-                href="/membres"
-                className="w-fit transition hover:text-amber-400"
-              >
-                Membres
-              </Link>
-            </nav>
+          <div className="flex flex-wrap gap-12 sm:gap-16">
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-200">
+                Navigation
+              </h3>
+              <nav className="flex flex-col gap-2 text-sm">
+                <Link
+                  href="/galerie"
+                  className="w-fit transition hover:text-amber-400"
+                >
+                  Galerie
+                </Link>
+                <Link
+                  href="/forum"
+                  className="w-fit transition hover:text-amber-400"
+                >
+                  Forum
+                </Link>
+                <Link
+                  href="/membres"
+                  className="w-fit transition hover:text-amber-400"
+                >
+                  Membres
+                </Link>
+              </nav>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-200">
+                Communauté
+              </h3>
+              <nav className="flex flex-col gap-2 text-sm">
+                <Link
+                  href="/nouveautes"
+                  className="w-fit transition hover:text-amber-400"
+                >
+                  Nouveautés
+                </Link>
+                <Link
+                  href="/faq"
+                  className="w-fit transition hover:text-amber-400"
+                >
+                  FAQ
+                </Link>
+                <Link
+                  href="/reglement"
+                  className="w-fit transition hover:text-amber-400"
+                >
+                  Règlement
+                </Link>
+              </nav>
+            </div>
           </div>
         </div>
 

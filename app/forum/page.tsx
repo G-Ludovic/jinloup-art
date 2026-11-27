@@ -103,6 +103,13 @@ export default function ForumPage() {
           <p className="mt-2 text-zinc-400">
             Échangez autour des œuvres, techniques et critiques artistiques.
           </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Merci de respecter le{" "}
+            <Link href="/reglement" className="text-amber-400 hover:underline">
+              règlement du forum
+            </Link>{" "}
+            dans vos échanges.
+          </p>
         </div>
 
         <NewTopicForm />
