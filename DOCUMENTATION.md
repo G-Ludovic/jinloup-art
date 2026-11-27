@@ -33,10 +33,10 @@ jinloup-art/
 │   │   ├── NavLinks.tsx             # Liens actifs avec usePathname (Client Component)
 │   │   ├── MobileMenu.tsx           # Menu burger mobile/tablette (Client Component)
 │   │   ├── UserMenu.tsx             # Menu utilisateur desktop + cloche (Client Component)
-│   │   ├── NotificationBell.tsx     # Cloche de notifications (Client Component)
+│   │   ├── NotificationBell.tsx     # Cloche de notifications optimisée (focus + clic)
 │   │   ├── UserAvatar.tsx           # Avatar circulaire 28/36/48 px ou initiale
 │   │   ├── ToastProvider.tsx        # Context & hook useToast() sans dépendance
-│   │   └── Footer.tsx               # Pied de page en 2 étages (Server Component)
+│   │   └── Footer.tsx               # Pied de page 2 colonnes + barre légale
 │   ├── admin/
 │   │   ├── page.tsx                 # Dashboard Admin/Modérateur + vue cartes mobile
 │   │   ├── actions.ts               # Server Actions Admin (œuvres, validation, rôles, sujets, ban)
@@ -52,33 +52,37 @@ jinloup-art/
 │   │   ├── page.tsx                 # Wrapper <Suspense> pour lecture du token URL
 │   │   └── ResetPasswordForm.tsx    # Formulaire nouveau mot de passe (useSearchParams)
 │   ├── forum/
-│   │   ├── page.tsx                 # Liste des sujets (Server Component)
-│   │   ├── actions.ts               # Server Actions Forum (création staff, réponses, modération)
+│   │   ├── page.tsx                 # Liste des sujets + lien règlement
+│   │   ├── actions.ts               # Server Actions Forum (sujets staff, réponses, édition, modération)
 │   │   ├── NewTopicForm.tsx         # Bouton/formulaire réservé au staff
 │   │   └── [id]/
 │   │       ├── page.tsx             # Détail d'un sujet + réponses + signatures
+│   │       ├── ForumCommentItem.tsx # Réponse forum (édition auteur inline + suppression)
 │   │       ├── ReplyForm.tsx        # Formulaire de réponse
-│   │       └── DeleteButton.tsx     # Suppression sujet/commentaire
+│   │       └── DeleteButton.tsx     # Suppression sujet principal
 │   ├── galerie/
 │   │   ├── page.tsx                 # Double galerie + raccourci #galerie-membres + compteurs
 │   │   ├── ScrollToHash.tsx         # Scroll automatique vers ancre après streaming <Suspense>
-│   │   ├── actions.ts               # Server Actions (soumission membre, likes, commentaires)
+│   │   ├── actions.ts               # Server Actions (soumission membre, likes, commentaires + édition)
 │   │   ├── LikeButton.tsx           # Bouton J'aime optimiste (useOptimistic)
 │   │   ├── LikersSummary.tsx        # Résumé + modale liste des likes
 │   │   ├── proposer/page.tsx        # Formulaire membre + compression WebP côté client
 │   │   └── [slug]/
 │   │       ├── page.tsx             # Détail œuvre (format adaptatif) + commentaires
-│   │       ├── ArtworkCommentForm.tsx # Formulaire commentaire sous œuvre
-│   │       └── DeleteArtworkCommentButton.tsx # Suppression commentaire œuvre
+│   │       ├── ArtworkCommentItem.tsx # Commentaire œuvre (édition auteur inline + suppression)
+│   │       └── ArtworkCommentForm.tsx # Formulaire commentaire sous œuvre
 │   ├── membres/page.tsx             # Annuaire public des membres actifs & grades
 │   ├── profil/
 │   │   ├── page.tsx                 # Profil protégé, stats, prestige & suivi œuvres
 │   │   ├── actions.ts               # Server Action updateProfile (avatar + bio)
 │   │   └── EditProfileForm.tsx      # Upload avatar recadré 48x48 px + citation
+│   ├── nouveautes/page.tsx          # Journal du développeur / Changelog statique
+│   ├── faq/page.tsx                 # FAQ statique en accordéon HTML natif (<details>)
+│   ├── reglement/page.tsx           # Règles de conduite du forum et de la galerie
 │   ├── mentions-legales/page.tsx    # Mentions légales (LCEN)
 │   ├── politique-confidentialite/page.tsx # Politique RGPD
 │   ├── layout.tsx                   # Sticky-footer, scroll-smooth, ToastProvider, metadata & favicon
-│   └── page.tsx                     # Page d'accueil + article d'appel vers #galerie-membres
+│   └── page.tsx                     # Page d'accueil + article #galerie-membres + teaser nouveautés
 ├── lib/
 │   ├── prisma.ts                    # Instance unique (singleton) de PrismaClient
 │   ├── auth.ts                      # Configuration serveur Better Auth + emails + hook ban
@@ -109,53 +113,54 @@ jinloup-art/
 - **`layout.tsx`** enveloppe toutes les pages sans se recharger.
 - **`[slug]` ou `[id]`** : route dynamique. `params` est une **Promise** à attendre avec `await params`.
 - **`[...all]`** : route _catch-all_ (utilisée par Better Auth).
-- **`notFound()`** : déclenche une vraie page 404 si une ressource est introuvable (utilisé aussi pour masquer les œuvres `PENDING`/`REJECTED` aux visiteurs non autorisés).
+- **`notFound()`** : déclenche une vraie page 404 si une ressource est introuvable (ou pour masquer les œuvres `PENDING`/`REJECTED` aux visiteurs non autorisés).
 - **Favicon :** Next.js donne la priorité à `app/favicon.ico` ou `app/icon.{png,jpg,svg,ico}`. Pour utiliser un `.webp` placé dans `public/`, supprimer `app/favicon.ico` et déclarer `metadata.icons` dans `app/layout.tsx`.
 
 ### B. Server Components vs Client Components
 
-- **Server Component (par défaut) :** exécuté uniquement côté serveur, lit Prisma et les sessions sans exposer de secrets au navigateur, ne peut pas utiliser de hooks React.
+- **Server Component (par défaut) :** exécuté uniquement côté serveur, lit Prisma et les sessions sans exposer de secrets au navigateur.
 - **Client Component (`"use client";`) :** réservé aux zones interactives (`useState`, `useActionState`, `useOptimistic`, `useTransition`, `usePathname`, `useSearchParams`, `authClient.useSession()`).
-- **Pattern Provider dans `layout.tsx` :** entourer `{children}` (et `Navbar` / `Footer`) avec un Client Component comme `<ToastProvider>` laisse les enfants passés en `children` rester des **Server Components**.
+- **Pages informatives 100 % statiques :** `/nouveautes`, `/faq` (accordéon natif `<details>/<summary>` sans JS) et `/reglement` n'interrogent aucune BDD → chargement instantané et **0 heure Neon consommée**.
+- **Attention aux fuseaux horaires (Hydration Mismatch) :** formater les dates côté serveur avec `{ timeZone: "Europe/Paris" }` avant de les passer en `createdAtLabel` à un Client Component (`ArtworkCommentItem`, `ForumCommentItem`) évite tout écart entre le serveur Vercel (UTC) et le navigateur français.
 
 ### C. Règles strictes de Next.js 16 (`Cache Components`) & Streaming
 
 1. **Toujours entourer les données dynamiques d'un `<Suspense>` :**
-   - Tout composant qui lit des données à la volée (`prisma.*`, `headers()`, `auth.api.getSession()`, `usePathname()`, `useSearchParams()`) doit être placé dans un `<Suspense fallback={...}>` (erreur sinon : `blocking-prerender-client-hook` ou `uncached data accessed outside <Suspense>`).
-   - C'est pour cette raison que `ResetPasswordForm` (`useSearchParams()`) est isolé dans `<Suspense>` dans `app/reinitialiser-mot-de-passe/page.tsx`.
-   - Appeler `await connection()` (de `next/server`) avant les requêtes BDD dans un Server Component public sous `<Suspense>` (ex : `GalleriesContent`) garantit l'exécution à la requête sans erreur `new Date() while prerendering`.
-   - Dans les composants statiques globaux (`Footer.tsx`), éviter `new Date()` hors `<Suspense>`.
+   - Tout composant lisant `prisma.*`, `headers()`, `auth.api.getSession()`, `usePathname()` ou `useSearchParams()` doit être placé dans `<Suspense fallback={...}>` (sinon `blocking-prerender-client-hook`).
+   - Appeler `await connection()` (de `next/server`) avant les requêtes BDD dans un Server Component public sous `<Suspense>` (`GalleriesContent`) pour éviter `new Date() while prerendering`.
+   - Dans les composants statiques globaux (`Footer.tsx`, `nouveautes/page.tsx`), éviter `new Date()`.
 2. **Ancres HTML (`#id`) avec `<Suspense>` :**
-   - Lors d'une navigation `<Link href="/galerie#galerie-membres">`, si `#galerie-membres` est dans `<Suspense>`, un composant `ScrollToHash.tsx` placé à l'intérieur du `<Suspense>` scrolle vers l'ancre dès le montage du flux. Pour la même page, `<a href="#galerie-membres">` + `className="scroll-smooth"` sur `<html>` suffit.
+   - Un composant `ScrollToHash.tsx` placé à l'intérieur du `<Suspense>` lit `window.location.hash` dans `useEffect` dès la fin du streaming. Sur la même page, `<a href="#galerie-membres">` + `className="scroll-smooth"` sur `<html>` suffit.
 3. **Ne jamais importer de données depuis un fichier `"use client"` dans un Server Component :**
-   - Tout export d'un fichier `"use client"` devient une référence client côté serveur (`TypeError: ...map is not a function`). Déclarer `navLinks` dans `Navbar.tsx` et le passer via `props`.
+   - Déclarer `navLinks` dans `Navbar.tsx` et les passer via `props`.
 4. **Exécution asynchrone après réponse (`after()` de `next/server`) :**
-   - Utilisé dans `lib/auth.ts` pour `sendVerificationEmail` et `sendResetPassword` : répond rapidement à l'utilisateur tout en garantissant que la fonction serverless Vercel attend la fin de l'envoi SMTP Nodemailer avant de s'éteindre.
+   - Utilisé dans `lib/auth.ts` pour `sendVerificationEmail` et `sendResetPassword` afin que la fonction serverless Vercel termine l'envoi SMTP Nodemailer.
 
 ### D. Images (`<Image />`) & Script de conversion `.webp`
 
-- **Grille `/galerie` :** `aspect-4/3` + `fill` + `object-cover object-top` pour uniformiser les cartes tout en cadrant les portraits vers le haut.
-- **Page détail `/galerie/[slug]` :** `width={1200} height={1200}` avec `className="h-auto max-h-[75vh] w-auto max-w-full"` pour respecter les proportions naturelles sans rognage.
-- **Data URIs (`data:image/webp;base64,...`) :** passer `unoptimized={artwork.imageUrl.startsWith("data:")}` sur `<Image />`.
-- **Conversion batch (`scripts/convert-to-webp.mjs`) :** utilise `sharp` (avec `.rotate()` pour respecter l'orientation EXIF) et `pg` pour convertir les `.png/.jpg/.jpeg` de `public/images/` en `.webp`, mettre à jour `Artwork.imageUrl` dans Neon en SQL paramétré, et supprimer les anciens originaux lourds.
+- **Grille `/galerie` :** `aspect-4/3` + `fill` + `object-cover object-top` (cadre les portraits vers le haut).
+- **Page détail `/galerie/[slug]` :** `width={1200} height={1200}` avec `className="h-auto max-h-[75vh] w-auto max-w-full"` (respecte les proportions naturelles sans rognage).
+- **Data URIs :** `unoptimized={artwork.imageUrl.startsWith("data:")}` sur `<Image />`.
+- **Conversion batch (`scripts/convert-to-webp.mjs`) :** utilise `sharp` (avec `.rotate()` pour l'orientation EXIF) et `pg` pour convertir les `.png/.jpg/.jpeg` de `public/images/` en `.webp`, mettre à jour `Artwork.imageUrl` dans Neon en SQL paramétré, et supprimer les anciens originaux.
 
 ---
 
 ## 4. PostgreSQL (Neon) & Prisma 7
 
-### A. Les deux URLs Neon dans `.env`
+### A. Les deux URLs Neon & Gestion du Free Plan
 
-- **`DATABASE_URL`** _(avec `-pooler`)_ : utilisée par l'application (`lib/prisma.ts`) et le script WebP.
+- **`DATABASE_URL`** _(avec `-pooler`)_ : utilisée par `lib/prisma.ts` et le script WebP.
 - **`DIRECT_URL`** _(sans `-pooler`)_ : utilisée par `prisma7.config.ts` pour les migrations (`prisma migrate dev`).
-- Utiliser **`sslmode=verify-full`** dans les deux URLs.
+- Toujours utiliser **`sslmode=verify-full`**.
+- **Économiser les 100 h/mois du Free Plan Neon :** Neon se met en veille après 5 min d'inactivité. Éviter les `setInterval` courts en arrière-plan (dans `NotificationBell.tsx`, rafraîchir uniquement au montage, au `focus` de la fenêtre et au clic sur la cloche).
 
 ### B. Le Singleton `lib/prisma.ts` & Cache Turbopack
 
-> **Réflexe indispensable :** après toute modification de `prisma/schema.prisma`, exécuter `npx prisma migrate dev`, `npx prisma generate`, puis **redémarrer `npm run dev` (`Ctrl+C`)** — et si Turbopack garde encore l'ancien client généré en cache, lancer `rm -rf .next && npm run dev` (et `TypeScript: Restart TS Server` dans VS Code).
+> **Réflexe indispensable :** après toute modification de `prisma/schema.prisma`, exécuter `npx prisma migrate dev`, `npx prisma generate`, puis **redémarrer `npm run dev` (`Ctrl+C`)** — et si Turbopack garde l'ancien client en cache, lancer `rm -rf .next && npm run dev` (et `TypeScript: Restart TS Server` dans VS Code).
 
 ### C. Relations, Transactions & Nommage
 
-- **Transactions (`prisma.$transaction`) :** création de sujet/réponse/commentaire ou approbation d'œuvre + incrémentation atomique de `postsCount` + création de `Notification` ; bannissement + suppression immédiate des sessions actives.
+- **Transactions (`prisma.$transaction`) :** création/approbation + incrémentation atomique de `postsCount` + `Notification` ; bannissement + révocation des sessions actives.
 - **Unicité des Likes (`ArtworkLike`) :** `@@unique([artworkId, userId])` génère la clé composée `artworkId_userId`.
 - **Nommage :** `Artwork.artworkComments` (`ArtworkComment[]`) évite toute confusion avec `Topic.comments`.
 
@@ -173,17 +178,15 @@ jinloup-art/
 
 ### B. Vérification d'email & Mot de passe oublié (Better Auth + Nodemailer)
 
-- **`emailAndPassword` :** `requireEmailVerification: true` bloque la connexion (`403 EMAIL_NOT_VERIFIED`) tant que l'email n'est pas validé ; `sendResetPassword` gère l'envoi du token de réinitialisation.
-- **`emailVerification` :** `sendOnSignUp: true` et `autoSignInAfterVerification: true` connectent automatiquement le membre lorsqu'il clique sur le lien de confirmation.
-- **Côté client (`authClient`) :**
-  - `authClient.sendVerificationEmail({ email, callbackURL: "/profil" })` pour renvoyer le lien.
-  - `authClient.requestPasswordReset({ email, redirectTo: "/reinitialiser-mot-de-passe" })` (affiche toujours un message neutre anti-énumération).
-  - `authClient.resetPassword({ newPassword, token })` pour valider le nouveau mot de passe.
-- **Nodemailer (`lib/mail.ts`) :** `secure: port === 465` gère automatiquement SSL (`465`) et STARTTLS (`587`). Avec Gmail, un **Mot de passe d'application** à 16 caractères (validation en 2 étapes activée) est obligatoire (sinon erreur `534-5.7.9 Application-specific password required`), et `SMTP_FROM` doit correspondre à `SMTP_USER`.
+- **`emailAndPassword` :** `requireEmailVerification: true` bloque le login (`403 EMAIL_NOT_VERIFIED`) tant que l'email n'est pas confirmé ; `sendResetPassword` envoie le lien de réinitialisation.
+- **`emailVerification` :** `sendOnSignUp: true` + `autoSignInAfterVerification: true`.
+- **Client (`authClient`) :** `sendVerificationEmail`, `requestPasswordReset`, `resetPassword`.
+- **Nodemailer (`lib/mail.ts`) :** `secure: port === 465` gère SSL (`465`) et STARTTLS (`587`). Avec Gmail, un **Mot de passe d'application** à 16 lettres (2FA activée) est obligatoire et `SMTP_FROM` doit correspondre à `SMTP_USER`.
 
-### C. Hiérarchie des permissions (`app/admin/actions.ts` & `app/forum/actions.ts`)
+### C. Hiérarchie des permissions & Édition
 
 - **Création/édition/suppression des sujets du forum :** `ADMIN` et `MODERATOR` (`requireStaff()`).
+- **Édition des commentaires (galerie & forum) :** **seul l'auteur** (`authorId === session.user.id`) peut modifier son texte (`updateArtworkComment`, `updateComment`) ; l'auteur, `MODERATOR` et `ADMIN` peuvent supprimer.
 - **Validation des œuvres membres, gestion des œuvres & rôles :** `ADMIN` (`requireAdmin()`).
 - **Bannissement & suppression de compte (`verifyModerationPermission`) :** interdit sur soi-même et sur `ADMIN` ; `MODERATOR` modère uniquement `MEMBER` ; `ADMIN` modère `MEMBER` et `MODERATOR`.
 
@@ -198,10 +201,11 @@ jinloup-art/
 
 ## 6. Server Actions, Optimistic UI, Toasts & Responsive
 
-- **`useActionState`** : validation serveur et état ; horodatage `successAt` + `useRef` dans `useEffect` pour déclencher toast/reset une seule fois.
-- **`useTransition` & `useOptimistic`** : boutons async et likes instantanés (`0 ms`).
+- **`useActionState`** : formulaires avec validation serveur ; horodatage `successAt` + `useRef` dans `useEffect` pour déclencher toast/reset une seule fois.
+- **`useTransition`** : boutons async et édition inline (`ArtworkCommentItem`, `ForumCommentItem`, `DeleteButton`, `RoleSelect`, `UserModerationActions`, `PendingArtworkCard`). Évite `setState` dans `useEffect` (conforme ESLint React 19).
+- **`useOptimistic`** (`LikeButton.tsx`) : mise à jour instantanée du ❤️ (`0 ms`).
 - **`ToastProvider` (`useToast()`)** : notifications flottantes 3,5 s (`aria-live="polite"`).
-- **Sticky Footer & Responsive :** `flex min-h-dvh flex-col` + `flex-1`, `scroll-smooth`, menu burger `< lg:`, cartes mobiles sur `/admin`, `wrap-break-word`.
+- **Sticky Footer & Responsive :** `flex min-h-dvh flex-col` + `flex-1`, `scroll-smooth`, menu burger `< lg:`, cartes mobiles sur `/admin`, `wrap-break-word` (Tailwind v4).
 
 ---
 
@@ -213,5 +217,5 @@ jinloup-art/
    - `DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (`https://jinloup-art.vercel.app`, sans `/` final — sinon erreur `Invalid origin`).
    - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
 4. `baseURL: { allowedHosts: [...] }` dans `lib/auth.ts` accepte aussi `localhost:3000` et les Previews Vercel.
-5. Vérifier dans Prisma Studio que les comptes créés avant l'activation de `requireEmailVerification` ont bien `emailVerified = true`.
+5. Vérifier dans Prisma Studio que les comptes créés avant `requireEmailVerification` ont `emailVerified = true`.
 6. Ne pas activer l'intégration optionnelle _Prisma Postgres_ si Neon est déjà configuré.

@@ -15,22 +15,21 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 - Affichage optimisé (`next/image` + `sharp`), cadrage intelligent sur la grille (`object-top`), conservation des **proportions naturelles** sur les pages de détail (`/galerie/[slug]`) et script de conversion en `.webp` (`scripts/convert-to-webp.mjs`).
 - Soumission d'œuvres par les membres (`/galerie/proposer`) avec compression automatique en WebP côté client, soumise à **validation préalable de l'équipe**.
 - Système de **J'aime ❤️** instantané (_Optimistic UI_ via `useOptimistic`) avec contrainte d'unicité en base de données et **modale interactive** listant les membres, leurs avatars et leurs grades.
-- **Commentaires sous chaque œuvre :** les membres connectés peuvent commenter les dessins (avec incrémentation automatique du prestige et modération).
+- **Commentaires sous chaque œuvre :** les membres connectés peuvent commenter les dessins, **modifier leurs propres commentaires** en cas de faute de frappe, ou les supprimer (avec incrémentation du prestige et modération).
 
 ### 🔔 Notifications en direct & Emails transactionnels
 
-- Cloche de notifications dans la barre de navigation (desktop & mobile) : avertit le staff lors d'une nouvelle proposition d'œuvre et informe les membres de la validation ou du refus, avec marquage lu et suppression.
+- Cloche de notifications optimisée dans la barre de navigation (desktop & mobile) : avertit le staff lors d'une nouvelle proposition d'œuvre et informe les membres de la validation ou du refus, avec marquage lu et suppression.
 - **Confirmation d'inscription par email** (vérification obligatoire avec renvoi du lien possible) et parcours complet **Mot de passe oublié / Réinitialisation** via **Nodemailer**.
 
 ### 💬 Forum Communautaire
 
 - Sujets structurés par catégories (_Discussion_, _Critique d'œuvre_, _Technique_, _Inspiration_), dont la création est réservée aux **Admins** et **Modérateurs** pour garder un forum clair et sans spam.
-- Réponses ouvertes à tous les membres via les **Server Actions** Next.js avec incrémentation du prestige.
-- Affichage de l'avatar et de la citation personnelle de chaque membre sous ses messages.
+- Réponses ouvertes à tous les membres via les **Server Actions** Next.js, avec **édition de ses propres réponses**, incrémentation du prestige et affichage de l'avatar + citation en signature.
 
 ### 👤 Espace Membre, Avatars & Système de Grades Hybride
 
-- Authentification sécurisée par email/mot de passe (**Better Auth** + sessions PostgreSQL) avec **notifications Toast** (inscription, connexion, déconnexion).
+- Authentification sécurisée par email/mot de passe (**Better Auth** + sessions PostgreSQL) avec **notifications Toast** (inscription, connexion, déconnexion, édition).
 - **Espace `/profil` complet :** upload d'avatar recadré automatiquement à **48×48 px** (WebP), citation personnelle (3 lignes max), statistiques d'activité, barre de progression vers le rang suivant et suivi des œuvres proposées.
 - **Annuaire `/membres` :** liste publique de la communauté avec avatar, date d'inscription, citation et grades (excluant les comptes bannis).
 - **Rôles de permissions :** `MEMBER`, `MODERATOR`, `ADMIN`.
@@ -44,8 +43,9 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 - Création, **édition et suppression des sujets du forum** directement depuis le panel admin (`ADMIN` & `MODERATOR`).
 - **Gestion des membres & hiérarchie de modération :** changement des rôles (`ADMIN` uniquement), **bannissement instantané** (révocation immédiate des sessions + blocage à la connexion) et **suppression de compte** avec respect strict des permissions.
 
-### 📱 Responsive, Légal & RGPD
+### 📘 Pages Communauté, Responsive & Conformité
 
+- **Journal du développeur (`/nouveautes`)**, **FAQ interactive (`/faq`)** et **Règlement du forum & de la galerie (`/reglement`)**.
 - Interface **100 % responsive** (mobile, tablette, desktop) avec menu burger dédié, scroll fluide et cartes adaptatives sur mobile.
 - Pied de page permanent (_sticky footer_) incluant les pages **Mentions légales** (`/mentions-legales`) et **Politique de confidentialité** (`/politique-confidentialite`).
 
