@@ -12,15 +12,15 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 ### 🖼️ Double Galerie d'Art, Likes & Commentaires
 
 - **Les œuvres de Jinloup** et **La Galerie des Membres** sur une même page (`/galerie`), avec raccourci d'ancrage rapide et article de mise en avant dès la page d'accueil (`/galerie#galerie-membres`).
-- Affichage optimisé (`next/image`), cadrage intelligent sur la grille (`object-top`) et conservation des **proportions naturelles** sur les pages de détail (`/galerie/[slug]`, sans rognage des formats portrait).
+- Affichage optimisé (`next/image` + `sharp`), cadrage intelligent sur la grille (`object-top`), conservation des **proportions naturelles** sur les pages de détail (`/galerie/[slug]`) et script de conversion en `.webp` (`scripts/convert-to-webp.mjs`).
 - Soumission d'œuvres par les membres (`/galerie/proposer`) avec compression automatique en WebP côté client, soumise à **validation préalable de l'équipe**.
 - Système de **J'aime ❤️** instantané (_Optimistic UI_ via `useOptimistic`) avec contrainte d'unicité en base de données et **modale interactive** listant les membres, leurs avatars et leurs grades.
 - **Commentaires sous chaque œuvre :** les membres connectés peuvent commenter les dessins (avec incrémentation automatique du prestige et modération).
 
-### 🔔 Notifications en direct
+### 🔔 Notifications en direct & Emails transactionnels
 
-- Cloche de notifications dans la barre de navigation (desktop & mobile) : avertit le staff lors d'une nouvelle proposition d'œuvre et informe les membres de l'acceptation ou du refus.
-- Marquage comme lu et suppression individuelle ou groupée des notifications lues.
+- Cloche de notifications dans la barre de navigation (desktop & mobile) : avertit le staff lors d'une nouvelle proposition d'œuvre et informe les membres de la validation ou du refus, avec marquage lu et suppression.
+- **Confirmation d'inscription par email** (vérification obligatoire avec renvoi du lien possible) et parcours complet **Mot de passe oublié / Réinitialisation** via **Nodemailer**.
 
 ### 💬 Forum Communautaire
 
@@ -59,6 +59,8 @@ Plateforme web full-stack construite avec **Next.js 16** permettant d'exposer de
 - **Base de données :** PostgreSQL (Neon)
 - **ORM :** Prisma 7 (`@prisma/adapter-pg`)
 - **Authentification :** Better Auth (`@better-auth/prisma-adapter`)
+- **Emails :** Nodemailer (SMTP)
+- **Optimisation d'images :** `next/image` + `sharp`
 - **Hébergement :** Vercel
 
 ---
@@ -85,6 +87,13 @@ DIRECT_URL="postgresql://user:password@host.neon.tech/db?sslmode=verify-full"
 # Better Auth (générer le secret avec : openssl rand -base64 32)
 BETTER_AUTH_SECRET="votre_cle_secrete_aleatoire"
 BETTER_AUTH_URL="http://localhost:3000"
+
+# Envoi d'emails (Nodemailer / SMTP)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="465"
+SMTP_USER="votre.adresse@gmail.com"
+SMTP_PASS="mot_de_passe_application"
+SMTP_FROM="Jinloup.Art <votre.adresse@gmail.com>"
 ```
 
 ### 3. Préparer la base de données
@@ -102,7 +111,7 @@ npm run dev
 
 Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 
-> **Astuce :** Pour passer votre premier compte en administrateur en local, lancez `npx prisma studio`, ouvrez la table `User` et passez le champ `role` à `ADMIN`.
+> **Astuce :** Pour passer votre premier compte en administrateur en local, lancez `npx prisma studio`, ouvrez la table `User` et passez `role` à `ADMIN` (et `emailVerified` à `true`).
 
 ---
 

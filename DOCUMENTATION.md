@@ -6,15 +6,17 @@ Ce document résume l'architecture complète, les concepts clés, les commandes 
 
 ## 1. Stack Technique
 
-| Brique                   | Outil utilisé                                    | Rôle                                                |
-| :----------------------- | :----------------------------------------------- | :-------------------------------------------------- |
-| **Framework Full-Stack** | **Next.js 16** (App Router + Turbopack)          | Routage, rendu serveur/client, API, Server Actions  |
-| **Langage**              | **TypeScript**                                   | Typage strict bout-en-bout (BDD → Serveur → Client) |
-| **Style**                | **Tailwind CSS v4**                              | Design responsive par classes utilitaires           |
-| **Base de données**      | **PostgreSQL** (hébergé sur **Neon**, Francfort) | Base relationnelle                                  |
-| **ORM**                  | **Prisma 7** (`@prisma/adapter-pg`)              | Modélisation du schéma, migrations, requêtes typées |
-| **Authentification**     | **Better Auth** (`@better-auth/prisma-adapter`)  | Inscription, connexion, sessions, hooks de sécurité |
-| **Déploiement**          | **Vercel**                                       | CI/CD automatique depuis GitHub                     |
+| Brique                   | Outil utilisé                                    | Rôle                                                       |
+| :----------------------- | :----------------------------------------------- | :--------------------------------------------------------- |
+| **Framework Full-Stack** | **Next.js 16** (App Router + Turbopack)          | Routage, rendu serveur/client, API, Server Actions         |
+| **Langage**              | **TypeScript**                                   | Typage strict bout-en-bout (BDD → Serveur → Client)        |
+| **Style**                | **Tailwind CSS v4**                              | Design responsive par classes utilitaires                  |
+| **Base de données**      | **PostgreSQL** (hébergé sur **Neon**, Francfort) | Base relationnelle                                         |
+| **ORM**                  | **Prisma 7** (`@prisma/adapter-pg`)              | Modélisation du schéma, migrations, requêtes typées        |
+| **Authentification**     | **Better Auth** (`@better-auth/prisma-adapter`)  | Inscription, connexion, vérif email, reset password, hooks |
+| **Emails**               | **Nodemailer**                                   | Envoi d'emails transactionnels SMTP                        |
+| **Images**               | **`next/image` + `sharp`**                       | Optimisation et conversion batch en `.webp`                |
+| **Déploiement**          | **Vercel**                                       | CI/CD automatique depuis GitHub                            |
 
 ---
 
@@ -44,7 +46,11 @@ jinloup-art/
 │   │   ├── RoleSelect.tsx           # Sélecteur de rôle membre (ADMIN uniquement)
 │   │   ├── TopicManagerRow.tsx      # Édition & suppression des sujets du forum
 │   │   └── UserModerationActions.tsx # Boutons Bannir / Débannir / Supprimer membre
-│   ├── connexion/page.tsx           # Inscription & Connexion + Toasts
+│   ├── connexion/page.tsx           # Inscription, Connexion & écran vérif email
+│   ├── mot-de-passe-oublie/page.tsx # Demande de réinitialisation mot de passe
+│   ├── reinitialiser-mot-de-passe/
+│   │   ├── page.tsx                 # Wrapper <Suspense> pour lecture du token URL
+│   │   └── ResetPasswordForm.tsx    # Formulaire nouveau mot de passe (useSearchParams)
 │   ├── forum/
 │   │   ├── page.tsx                 # Liste des sujets (Server Component)
 │   │   ├── actions.ts               # Server Actions Forum (création staff, réponses, modération)
@@ -75,16 +81,19 @@ jinloup-art/
 │   └── page.tsx                     # Page d'accueil + article d'appel vers #galerie-membres
 ├── lib/
 │   ├── prisma.ts                    # Instance unique (singleton) de PrismaClient
-│   ├── auth.ts                      # Configuration serveur Better Auth + hook ban
+│   ├── auth.ts                      # Configuration serveur Better Auth + emails + hook ban
 │   ├── auth-client.ts               # Client React Better Auth (typé)
+│   ├── mail.ts                      # Transporteur Nodemailer & templates HTML/texte
 │   ├── ranks.ts                     # Rangs de prestige, barre de progression & badges
 │   └── generated/prisma/            # Client Prisma généré automatiquement
 ├── prisma/
 │   ├── schema.prisma                # Modèles BDD (Artwork, ArtworkLike, ArtworkComment, Notification, User, Topic, Comment...)
 │   └── migrations/                  # Historique SQL des migrations
+├── scripts/
+│   └── convert-to-webp.mjs          # Script batch sharp + MAJ Neon imageUrl
 ├── public/
 │   ├── logo-loup-mystique.webp      # Logo principal & favicon
-│   └── images/                      # Œuvres locales servies depuis /images/...
+│   └── images/                      # Œuvres locales en .webp servies depuis /images/...
 ├── .env                             # Variables secrètes (JAMAIS commité sur Git)
 ├── next.config.ts                   # Configuration Next.js (images.remotePatterns)
 └── prisma7.config.ts                # Configuration CLI Prisma (pointe sur DIRECT_URL)
@@ -106,27 +115,29 @@ jinloup-art/
 ### B. Server Components vs Client Components
 
 - **Server Component (par défaut) :** exécuté uniquement côté serveur, lit Prisma et les sessions sans exposer de secrets au navigateur, ne peut pas utiliser de hooks React.
-- **Client Component (`"use client";`) :** réservé aux zones interactives (`useState`, `useActionState`, `useOptimistic`, `useTransition`, `usePathname`, `authClient.useSession()`).
+- **Client Component (`"use client";`) :** réservé aux zones interactives (`useState`, `useActionState`, `useOptimistic`, `useTransition`, `usePathname`, `useSearchParams`, `authClient.useSession()`).
 - **Pattern Provider dans `layout.tsx` :** entourer `{children}` (et `Navbar` / `Footer`) avec un Client Component comme `<ToastProvider>` laisse les enfants passés en `children` rester des **Server Components**.
 
 ### C. Règles strictes de Next.js 16 (`Cache Components`) & Streaming
 
 1. **Toujours entourer les données dynamiques d'un `<Suspense>` :**
-   - Tout composant qui lit des données à la volée (`prisma.*`, `headers()`, `auth.api.getSession()`, `usePathname()`) doit être placé dans un `<Suspense fallback={...}>` (erreur sinon : `blocking-prerender-client-hook` ou `uncached data accessed outside <Suspense>`).
+   - Tout composant qui lit des données à la volée (`prisma.*`, `headers()`, `auth.api.getSession()`, `usePathname()`, `useSearchParams()`) doit être placé dans un `<Suspense fallback={...}>` (erreur sinon : `blocking-prerender-client-hook` ou `uncached data accessed outside <Suspense>`).
+   - C'est pour cette raison que `ResetPasswordForm` (`useSearchParams()`) est isolé dans `<Suspense>` dans `app/reinitialiser-mot-de-passe/page.tsx`.
    - Appeler `await connection()` (de `next/server`) avant les requêtes BDD dans un Server Component public sous `<Suspense>` (ex : `GalleriesContent`) garantit l'exécution à la requête sans erreur `new Date() while prerendering`.
-   - Dans les composants statiques globaux (`Footer.tsx`), éviter `new Date()` hors `<Suspense>` pour ne pas bloquer le pré-rendu des pages statiques et `/_not-found`.
+   - Dans les composants statiques globaux (`Footer.tsx`), éviter `new Date()` hors `<Suspense>`.
 2. **Ancres HTML (`#id`) avec `<Suspense>` :**
-   - Lors d'une navigation `<Link href="/galerie#galerie-membres">`, si `#galerie-membres` se trouve à l'intérieur d'un `<Suspense>`, l'élément n'existe pas encore dans le DOM pendant le fallback.
-   - _Solution :_ placer un mini composant client (`ScrollToHash.tsx`) à l'intérieur du `<Suspense>` qui lit `window.location.hash` dans `useEffect` et appelle `scrollIntoView({ behavior: "smooth" })` dès que le contenu est monté. Pour les ancres sur la même page, `<a href="#galerie-membres">` + `className="scroll-smooth"` sur `<html>` suffit.
+   - Lors d'une navigation `<Link href="/galerie#galerie-membres">`, si `#galerie-membres` est dans `<Suspense>`, un composant `ScrollToHash.tsx` placé à l'intérieur du `<Suspense>` scrolle vers l'ancre dès le montage du flux. Pour la même page, `<a href="#galerie-membres">` + `className="scroll-smooth"` sur `<html>` suffit.
 3. **Ne jamais importer de données depuis un fichier `"use client"` dans un Server Component :**
-   - Tout export d'un fichier `"use client"` devient une référence client côté serveur (`TypeError: ...map is not a function`).
-   - _Solution :_ déclarer `navLinks` dans `Navbar.tsx` et le passer via `props`.
+   - Tout export d'un fichier `"use client"` devient une référence client côté serveur (`TypeError: ...map is not a function`). Déclarer `navLinks` dans `Navbar.tsx` et le passer via `props`.
+4. **Exécution asynchrone après réponse (`after()` de `next/server`) :**
+   - Utilisé dans `lib/auth.ts` pour `sendVerificationEmail` et `sendResetPassword` : répond rapidement à l'utilisateur tout en garantissant que la fonction serverless Vercel attend la fin de l'envoi SMTP Nodemailer avant de s'éteindre.
 
-### D. Images (`<Image />`) & Formats Portrait/Paysage
+### D. Images (`<Image />`) & Script de conversion `.webp`
 
 - **Grille `/galerie` :** `aspect-4/3` + `fill` + `object-cover object-top` pour uniformiser les cartes tout en cadrant les portraits vers le haut.
-- **Page détail `/galerie/[slug]` :** passer `width={1200} height={1200}` avec `className="h-auto max-h-[75vh] w-auto max-w-full"` afin que l'image s'adapte exactement à ses proportions naturelles sans rognage.
-- **Data URIs (`data:image/webp;base64,...`) :** passer `unoptimized={artwork.imageUrl.startsWith("data:")}` sur `<Image />` pour afficher proprement les œuvres soumises par les membres.
+- **Page détail `/galerie/[slug]` :** `width={1200} height={1200}` avec `className="h-auto max-h-[75vh] w-auto max-w-full"` pour respecter les proportions naturelles sans rognage.
+- **Data URIs (`data:image/webp;base64,...`) :** passer `unoptimized={artwork.imageUrl.startsWith("data:")}` sur `<Image />`.
+- **Conversion batch (`scripts/convert-to-webp.mjs`) :** utilise `sharp` (avec `.rotate()` pour respecter l'orientation EXIF) et `pg` pour convertir les `.png/.jpg/.jpeg` de `public/images/` en `.webp`, mettre à jour `Artwork.imageUrl` dans Neon en SQL paramétré, et supprimer les anciens originaux lourds.
 
 ---
 
@@ -134,64 +145,63 @@ jinloup-art/
 
 ### A. Les deux URLs Neon dans `.env`
 
-- **`DATABASE_URL`** _(avec `-pooler`)_ : utilisée par l'application (`lib/prisma.ts`) pour gérer les connexions simultanées.
-- **`DIRECT_URL`** _(sans `-pooler`)_ : utilisée par `prisma7.config.ts` pour exécuter les migrations (`prisma migrate dev`).
-- Toujours utiliser **`sslmode=verify-full`** dans les deux URLs pour éviter le warning SSL du pilote `pg`.
+- **`DATABASE_URL`** _(avec `-pooler`)_ : utilisée par l'application (`lib/prisma.ts`) et le script WebP.
+- **`DIRECT_URL`** _(sans `-pooler`)_ : utilisée par `prisma7.config.ts` pour les migrations (`prisma migrate dev`).
+- Utiliser **`sslmode=verify-full`** dans les deux URLs.
 
 ### B. Le Singleton `lib/prisma.ts` & Cache Turbopack
 
-Stocke `PrismaClient` dans `globalThis` en développement.
-
-> **Réflexe indispensable :** après toute modification de `prisma/schema.prisma`, exécuter `npx prisma migrate dev`, `npx prisma generate`, puis **redémarrer `npm run dev` (`Ctrl+C`)** — et si Turbopack garde encore l'ancien client généré en cache, supprimer `.next` (`rm -rf .next`) puis relancer `npm run dev` (et `TypeScript: Restart TS Server` dans VS Code).
+> **Réflexe indispensable :** après toute modification de `prisma/schema.prisma`, exécuter `npx prisma migrate dev`, `npx prisma generate`, puis **redémarrer `npm run dev` (`Ctrl+C`)** — et si Turbopack garde encore l'ancien client généré en cache, lancer `rm -rf .next && npm run dev` (et `TypeScript: Restart TS Server` dans VS Code).
 
 ### C. Relations, Transactions & Nommage
 
-- **Transactions (`prisma.$transaction`) :** création d'un sujet/réponse/commentaire ou approbation d'œuvre + incrémentation atomique de `postsCount` + création de `Notification` ; bannissement + suppression immédiate des sessions actives.
-- **Unicité des Likes (`ArtworkLike`) :** `@@unique([artworkId, userId])` empêche les doublons au niveau SQL et génère la clé composée `artworkId_userId` dans Prisma.
-- **Cohérence des noms de relations :** dans `Artwork`, la relation des commentaires s'appelle **`artworkComments`** (`ArtworkComment[]`), ce qui évite toute ambiguïté avec `Topic.comments`.
+- **Transactions (`prisma.$transaction`) :** création de sujet/réponse/commentaire ou approbation d'œuvre + incrémentation atomique de `postsCount` + création de `Notification` ; bannissement + suppression immédiate des sessions actives.
+- **Unicité des Likes (`ArtworkLike`) :** `@@unique([artworkId, userId])` génère la clé composée `artworkId_userId`.
+- **Nommage :** `Artwork.artworkComments` (`ArtworkComment[]`) évite toute confusion avec `Topic.comments`.
 
 ---
 
-## 5. Authentification, Modération, Notifications & Grades
+## 5. Authentification, Emails, Modération & Grades (Better Auth)
 
 ### A. Sécurité Serveur, Champs personnalisés & Bannissement
 
 - `lib/auth.ts` déclare `role`, `postsCount`, `bio` et `banned` dans `user.additionalFields` avec **`input: false`**.
 - `nextCookies()` est placé en dernier dans `plugins`.
-- **Blocage des comptes bannis :** `databaseHooks.session.create.before` vérifie `user.banned` avant de créer une session et lève `new APIError("FORBIDDEN", { message: "..." })`.
-- `lib/auth-client.ts` utilise `inferAdditionalFields<typeof auth>()`, et `refetch()` rafraîchit la session client après modification du profil ou ajout de commentaire.
+- **Blocage des comptes bannis :** `databaseHooks.session.create.before` vérifie `user.banned` et lève `new APIError("FORBIDDEN", { message: "..." })`.
+- `lib/auth-client.ts` utilise `inferAdditionalFields<typeof auth>()`, et `refetch()` rafraîchit la session client.
 - **Données publiques :** sur `/membres` et `LikersSummary`, ne jamais sélectionner `email` ; `/membres` filtre `where: { banned: false }`.
 
-### B. Hiérarchie des permissions (`app/admin/actions.ts` & `app/forum/actions.ts`)
+### B. Vérification d'email & Mot de passe oublié (Better Auth + Nodemailer)
 
-- **Création/édition/suppression des sujets du forum :** réservée à `ADMIN` et `MODERATOR` (`requireStaff()`).
-- **Validation des œuvres membres, gestion des œuvres & rôles :** réservée à `ADMIN` (`requireAdmin()`), avec protection empêchant un admin de retirer son propre rôle.
+- **`emailAndPassword` :** `requireEmailVerification: true` bloque la connexion (`403 EMAIL_NOT_VERIFIED`) tant que l'email n'est pas validé ; `sendResetPassword` gère l'envoi du token de réinitialisation.
+- **`emailVerification` :** `sendOnSignUp: true` et `autoSignInAfterVerification: true` connectent automatiquement le membre lorsqu'il clique sur le lien de confirmation.
+- **Côté client (`authClient`) :**
+  - `authClient.sendVerificationEmail({ email, callbackURL: "/profil" })` pour renvoyer le lien.
+  - `authClient.requestPasswordReset({ email, redirectTo: "/reinitialiser-mot-de-passe" })` (affiche toujours un message neutre anti-énumération).
+  - `authClient.resetPassword({ newPassword, token })` pour valider le nouveau mot de passe.
+- **Nodemailer (`lib/mail.ts`) :** `secure: port === 465` gère automatiquement SSL (`465`) et STARTTLS (`587`). Avec Gmail, un **Mot de passe d'application** à 16 caractères (validation en 2 étapes activée) est obligatoire (sinon erreur `534-5.7.9 Application-specific password required`), et `SMTP_FROM` doit correspondre à `SMTP_USER`.
+
+### C. Hiérarchie des permissions (`app/admin/actions.ts` & `app/forum/actions.ts`)
+
+- **Création/édition/suppression des sujets du forum :** `ADMIN` et `MODERATOR` (`requireStaff()`).
+- **Validation des œuvres membres, gestion des œuvres & rôles :** `ADMIN` (`requireAdmin()`).
 - **Bannissement & suppression de compte (`verifyModerationPermission`) :** interdit sur soi-même et sur `ADMIN` ; `MODERATOR` modère uniquement `MEMBER` ; `ADMIN` modère `MEMBER` et `MODERATOR`.
 
-### C. Compression d'images côté client (compatible Vercel)
+### D. Compression d'images côté client & Grades
 
-- **Avatars (`/profil`) :** recadrage carré `48×48 px` WebP via `<canvas>` (~2 Ko), validé côté serveur (`data:image/(webp|png|jpeg);base64,` ≤ 25 000 car.).
-- **Œuvres membres (`/galerie/proposer`) :** redimensionnement proportionnel max `900 px` en WebP (qualité `0.82`) via `<canvas>` (~60–200 Ko, bien sous la limite de 1 Mo des Server Actions), validé côté serveur (≤ 650 000 car.).
-
-### D. Notifications (`/api/notifications` & `NotificationBell.tsx`)
-
-- Route API sécurisée par session : `GET` (15 dernières + `unreadCount`), `PATCH` (marquer 1 ou toutes comme lues), `DELETE` (supprimer 1 ou toutes les lues, toujours filtré par `userId: session.user.id`).
-- `NotificationBell.tsx` ne lit pas `usePathname()` pour rester compatible avec `Navbar` sans déclencher `blocking-prerender-client-hook`.
-
-### E. Grades Hybrides (`lib/ranks.ts`)
-
-- **Permissions (`user.role`) :** `"MEMBER" | "MODERATOR" | "ADMIN"`.
-- **Prestige :** `points = postsCount * 10 + joursDancienneté` (_Novice_ 0 → _Apprenti_ 30 → _Amateur Éclairé_ 100 → _Connaisseur_ 300 → _Maître d'Art_ 700), avec pourcentage de progression (`getPrestigeProgress`).
+- **Avatars (`/profil`) :** recadrage carré `48×48 px` WebP via `<canvas>` (~2 Ko), validé côté serveur (`≤ 25 000` car.).
+- **Œuvres membres (`/galerie/proposer`) :** redimensionnement proportionnel max `900 px` en WebP (`0.82`) via `<canvas>`, validé côté serveur (`≤ 650 000` car.).
+- **Notifications (`/api/notifications`) :** `GET` / `PATCH` / `DELETE` sécurisés par session et filtrés par `userId`.
+- **Grades (`lib/ranks.ts`) :** `points = postsCount * 10 + joursDancienneté` (_Novice_ 0 → _Apprenti_ 30 → _Amateur Éclairé_ 100 → _Connaisseur_ 300 → _Maître d'Art_ 700), avec `getPrestigeProgress`.
 
 ---
 
 ## 6. Server Actions, Optimistic UI, Toasts & Responsive
 
-- **`useActionState`** : formulaires avec validation serveur et gestion d'état ; horodatage `successAt` + `useRef` dans `useEffect` pour déclencher `toast.success` / `reset()` exactement une fois par envoi.
-- **`useTransition`** : chargement sur boutons/sélecteurs (`DeleteButton`, `RoleSelect`, `UserModerationActions`, `PendingArtworkCard`, `DeleteArtworkCommentButton`).
-- **`useOptimistic`** (`LikeButton.tsx`) : mise à jour instantanée du ❤️ (0 ms) avant réponse serveur.
-- **`ToastProvider` (`useToast()`)** : file de notifications auto-fermées après 3,5 s (`useCallback` / `useMemo`, `aria-live="polite"`).
-- **Sticky Footer & Responsive :** `flex min-h-dvh flex-col` + `flex-1` sur `<main>`, menu burger `< lg:`, cartes mobiles sur `/admin`, `wrap-break-word` (Tailwind v4).
+- **`useActionState`** : validation serveur et état ; horodatage `successAt` + `useRef` dans `useEffect` pour déclencher toast/reset une seule fois.
+- **`useTransition` & `useOptimistic`** : boutons async et likes instantanés (`0 ms`).
+- **`ToastProvider` (`useToast()`)** : notifications flottantes 3,5 s (`aria-live="polite"`).
+- **Sticky Footer & Responsive :** `flex min-h-dvh flex-col` + `flex-1`, `scroll-smooth`, menu burger `< lg:`, cartes mobiles sur `/admin`, `wrap-break-word`.
 
 ---
 
@@ -199,6 +209,9 @@ Stocke `PrismaClient` dans `globalThis` en développement.
 
 1. Dans `package.json`, définir `"build": "prisma generate && next build"`.
 2. Valider localement avec `npm run build` et `npm run start`.
-3. Sur Vercel (_Environment Variables_), renseigner `DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET` et `BETTER_AUTH_URL` (`https://jinloup-art.vercel.app`, sans guillemets ni `/` final — sinon erreur `Invalid origin`).
-4. `baseURL: { allowedHosts: [...] }` dans `lib/auth.ts` accepte aussi `localhost:3000` et les URLs de Preview Vercel.
-5. Ne pas activer l'intégration optionnelle _Prisma Postgres_ si Neon est déjà configuré.
+3. Sur Vercel (_Environment Variables_), renseigner **sans guillemets `"`** :
+   - `DATABASE_URL`, `DIRECT_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (`https://jinloup-art.vercel.app`, sans `/` final — sinon erreur `Invalid origin`).
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
+4. `baseURL: { allowedHosts: [...] }` dans `lib/auth.ts` accepte aussi `localhost:3000` et les Previews Vercel.
+5. Vérifier dans Prisma Studio que les comptes créés avant l'activation de `requireEmailVerification` ont bien `emailVerified = true`.
+6. Ne pas activer l'intégration optionnelle _Prisma Postgres_ si Neon est déjà configuré.
