@@ -29,8 +29,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="fr" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="flex min-h-dvh flex-col bg-zinc-950 text-zinc-100 antialiased">
         <ToastProvider>
+          <a
+            href="#main-content"
+            className="sr-only z-50 rounded-md bg-amber-400 px-4 py-2 font-semibold text-zinc-950 focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+          >
+            Aller au contenu
+          </a>
           <Navbar />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10"
+          >
             {children}
           </main>
           <Footer />

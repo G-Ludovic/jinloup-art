@@ -138,13 +138,14 @@ export default function ProposerOeuvrePage() {
         <input type="hidden" name="imageUrl" value={imageData} />
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300">
+          <p className="block text-sm font-medium text-zinc-300">
             Fichier de votre œuvre
-          </label>
+          </p>
           <div className="mt-2 flex flex-wrap items-center gap-4">
             <label className="cursor-pointer rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-amber-500">
               Choisir une image
               <input
+                id="artwork-file"
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 onChange={handleFileChange}
@@ -175,10 +176,14 @@ export default function ProposerOeuvrePage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-zinc-300">
+            <label
+              htmlFor="artwork-title"
+              className="block text-sm font-medium text-zinc-300"
+            >
               Titre de l&apos;œuvre
             </label>
             <input
+              id="artwork-title"
               name="title"
               type="text"
               required
@@ -190,10 +195,14 @@ export default function ProposerOeuvrePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300">
+            <label
+              htmlFor="artwork-year"
+              className="block text-sm font-medium text-zinc-300"
+            >
               Année
             </label>
             <input
+              id="artwork-year"
               name="year"
               type="number"
               defaultValue={2026}
@@ -203,10 +212,14 @@ export default function ProposerOeuvrePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300">
+          <label
+            htmlFor="artwork-medium"
+            className="block text-sm font-medium text-zinc-300"
+          >
             Technique (optionnel)
           </label>
           <input
+            id="artwork-medium"
             name="medium"
             type="text"
             placeholder="Ex : Crayon, Aquarelle, Digital..."
@@ -215,10 +228,14 @@ export default function ProposerOeuvrePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300">
+          <label
+            htmlFor="artwork-description"
+            className="block text-sm font-medium text-zinc-300"
+          >
             Description
           </label>
           <textarea
+            id="artwork-description"
             name="description"
             required
             minLength={5}

@@ -82,7 +82,7 @@ export default function FaqPage() {
         Pensez également à consulter le{" "}
         <Link
           href="/reglement"
-          className="font-semibold text-amber-400 hover:underline"
+          className="font-semibold text-amber-400 underline"
         >
           règlement du forum et de la galerie
         </Link>

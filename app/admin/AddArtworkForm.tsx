@@ -30,10 +30,14 @@ export default function AddArtworkForm() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-zinc-300">
+          <label
+            htmlFor="artwork-title"
+            className="block text-sm font-medium text-zinc-300"
+          >
             Titre
           </label>
           <input
+            id="artwork-title"
             name="title"
             type="text"
             required
@@ -43,10 +47,14 @@ export default function AddArtworkForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300">
+          <label
+            htmlFor="artwork-artist"
+            className="block text-sm font-medium text-zinc-300"
+          >
             Artiste
           </label>
           <input
+            id="artwork-artist"
             name="artistName"
             type="text"
             required
@@ -56,10 +64,14 @@ export default function AddArtworkForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-300">
+          <label
+            htmlFor="artwork-image-url"
+            className="block text-sm font-medium text-zinc-300"
+          >
             Chemin ou URL de l&apos;image
           </label>
           <input
+            id="artwork-image-url"
             name="imageUrl"
             type="text"
             required
@@ -74,10 +86,14 @@ export default function AddArtworkForm() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-zinc-300">
+            <label
+              htmlFor="artwork-medium"
+              className="block text-sm font-medium text-zinc-300"
+            >
               Technique
             </label>
             <input
+              id="artwork-medium"
               name="medium"
               type="text"
               placeholder="Crayon, Digital..."
@@ -85,10 +101,14 @@ export default function AddArtworkForm() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-zinc-300">
+            <label
+              htmlFor="artwork-year"
+              className="block text-sm font-medium text-zinc-300"
+            >
               Année
             </label>
             <input
+              id="artwork-year"
               name="year"
               type="number"
               placeholder="2026"
@@ -99,10 +119,14 @@ export default function AddArtworkForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-zinc-300">
+        <label
+          htmlFor="artwork-description"
+          className="block text-sm font-medium text-zinc-300"
+        >
           Description
         </label>
         <textarea
+          id="artwork-description"
           name="description"
           required
           rows={3}
