@@ -62,7 +62,7 @@ export default function MobileMenu({ links }: { links: NavItem[] }) {
       {/* Panneau déroulant Mobile / Tablette */}
       {isOpen && (
         <div className="absolute inset-x-0 top-73px z-50 border-b border-zinc-800 bg-zinc-950/95 px-4 py-5 shadow-2xl backdrop-blur-md">
-          <nav className="flex flex-col gap-1">
+          <nav aria-label="Menu de navigation mobile" className="flex flex-col gap-1">
             {links.map((link) => {
               const isActive =
                 link.href === "/"
@@ -74,6 +74,7 @@ export default function MobileMenu({ links }: { links: NavItem[] }) {
                   key={link.href}
                   href={link.href}
                   onClick={() => setIsOpen(false)}
+                  aria-current={isActive ? "page" : undefined}
                   className={`rounded-lg px-3 py-2.5 text-base font-medium transition ${
                     isActive
                       ? "bg-amber-500/10 text-amber-400"

@@ -31,6 +31,7 @@ export default function RoleSelect({
           ? "Vous ne pouvez pas modifier votre propre rôle"
           : "Changer le rôle"
       }
+      aria-label={isSelf ? "Votre rôle (non modifiable)" : "Rôle du membre"}
       className="rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-100 focus:border-amber-500 focus:outline-none disabled:opacity-50"
     >
       <option value="MEMBER">Membre</option>

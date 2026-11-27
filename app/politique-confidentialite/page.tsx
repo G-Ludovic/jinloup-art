@@ -88,7 +88,7 @@ export default function PolitiqueConfidentialitePage() {
           contactez :{" "}
           <a
             href="mailto:votre.email@exemple.fr"
-            className="text-amber-400 hover:underline"
+            className="text-amber-400 underline"
           >
             loup.toundragaming@outlook.fr
           </a>
@@ -100,7 +100,7 @@ export default function PolitiqueConfidentialitePage() {
             href="https://www.cnil.fr"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-amber-400 hover:underline"
+            className="text-amber-400 underline"
           >
             CNIL
           </a>

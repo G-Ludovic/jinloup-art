@@ -32,7 +32,7 @@ export default function MentionsLegalesPage() {
           Contact :{" "}
           <a
             href="mailto:loup.toundragaming@outlook.fr"
-            className="text-amber-400 hover:underline"
+            className="text-amber-400 underline"
           >
             loup.toundragaming@outlook.fr
           </a>
@@ -54,7 +54,7 @@ export default function MentionsLegalesPage() {
             href="https://vercel.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-amber-400 hover:underline"
+            className="text-amber-400 underline"
           >
             vercel.com
           </a>
@@ -67,7 +67,7 @@ export default function MentionsLegalesPage() {
             href="https://neon.tech"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-amber-400 hover:underline"
+            className="text-amber-400 underline"
           >
             neon.tech
           </a>

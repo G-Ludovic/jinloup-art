@@ -105,7 +105,7 @@ export default function ForumPage() {
           </p>
           <p className="mt-1 text-xs text-zinc-500">
             Merci de respecter le{" "}
-            <Link href="/reglement" className="text-amber-400 hover:underline">
+            <Link href="/reglement" className="text-amber-400 underline">
               règlement du forum
             </Link>{" "}
             dans vos échanges.

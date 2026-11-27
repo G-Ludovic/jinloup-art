@@ -32,7 +32,10 @@ function NavLinksFallback() {
 export default function Navbar() {
   return (
     <header className="relative border-b border-zinc-800 bg-zinc-950 text-zinc-100">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+      <nav
+        aria-label="Navigation principale"
+        className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6"
+      >
         <Link
           href="/"
           className="flex items-center gap-3 text-xl font-bold tracking-tight"

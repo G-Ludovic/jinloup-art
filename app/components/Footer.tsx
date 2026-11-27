@@ -31,10 +31,13 @@ export default function Footer() {
 
           <div className="flex flex-wrap gap-12 sm:gap-16">
             <div className="space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-200">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-200">
                 Navigation
-              </h3>
-              <nav className="flex flex-col gap-2 text-sm">
+              </h2>
+              <nav
+                aria-label="Navigation de bas de page"
+                className="flex flex-col gap-2 text-sm"
+              >
                 <Link
                   href="/galerie"
                   className="w-fit transition hover:text-amber-400"
@@ -57,10 +60,13 @@ export default function Footer() {
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-200">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-200">
                 Communauté
-              </h3>
-              <nav className="flex flex-col gap-2 text-sm">
+              </h2>
+              <nav
+                aria-label="Liens communautaires"
+                className="flex flex-col gap-2 text-sm"
+              >
                 <Link
                   href="/nouveautes"
                   className="w-fit transition hover:text-amber-400"

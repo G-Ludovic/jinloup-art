@@ -21,6 +21,7 @@ export default function NavLinks({ links }: { links: NavItem[] }) {
           <Link
             key={link.href}
             href={link.href}
+            aria-current={isActive ? "page" : undefined}
             className={`text-sm font-medium transition-colors ${
               isActive ? "text-amber-400" : "text-zinc-400 hover:text-zinc-100"
             }`}
