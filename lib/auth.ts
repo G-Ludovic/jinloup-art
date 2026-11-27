@@ -3,6 +3,8 @@ import { APIError } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "./prisma";
+import { after } from "next/server";
+import { sendVerificationEmail } from "./mail";
 
 export const auth = betterAuth({
   baseURL: {
@@ -17,6 +19,24 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      after(async () => {
+        try {
+          await sendVerificationEmail({
+            to: user.email,
+            name: user.name,
+            url,
+          });
+        } catch (err) {
+          console.error("Erreur envoi email de vérification:", err);
+        }
+      });
+    },
   },
   user: {
     additionalFields: {
