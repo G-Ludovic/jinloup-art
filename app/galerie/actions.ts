@@ -257,3 +257,45 @@ export async function submitMemberArtwork(
       "Votre œuvre a bien été envoyée ! Elle sera visible dans la Galerie des Membres après validation.",
   };
 }
+
+export async function updateArtworkComment(
+  commentId: string,
+  slug: string,
+  content: string,
+): Promise<{ error: string | null }> {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return { error: "Vous devez être connecté." };
+  }
+
+  const trimmed = content.trim();
+  if (trimmed.length < 2 || trimmed.length > 1000) {
+    return {
+      error: "Le commentaire doit contenir entre 2 et 1000 caractères.",
+    };
+  }
+
+  const comment = await prisma.artworkComment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true },
+  });
+
+  if (!comment) {
+    return { error: "Commentaire introuvable." };
+  }
+
+  if (comment.authorId !== session.user.id) {
+    return { error: "Vous ne pouvez modifier que vos propres commentaires." };
+  }
+
+  await prisma.artworkComment.update({
+    where: { id: commentId },
+    data: { content: trimmed },
+  });
+
+  revalidatePath(`/galerie/${slug}`);
+  return { error: null };
+}

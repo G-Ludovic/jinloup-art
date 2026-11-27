@@ -6,9 +6,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
 import UserAvatar from "@/app/components/UserAvatar";
-import { deleteComment, deleteTopic } from "../actions";
+import { deleteTopic } from "../actions";
 import ReplyForm from "./ReplyForm";
 import DeleteButton from "./DeleteButton";
+import ForumCommentItem from "./ForumCommentItem";
 
 async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -109,7 +110,12 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
             >
               {authorPrestige.label}
             </span>
-            <span>• {new Date(topic.createdAt).toLocaleString("fr-FR")}</span>
+            <span>
+              •{" "}
+              {new Date(topic.createdAt).toLocaleString("fr-FR", {
+                timeZone: "Europe/Paris",
+              })}
+            </span>
           </div>
         </div>
 
@@ -135,70 +141,34 @@ async function TopicDetail({ params }: { params: Promise<{ id: string }> }) {
             Aucune réponse pour l&apos;instant. Lancez la discussion !
           </p>
         ) : (
-          topic.comments.map((comment) => {
-            const prestige = getPrestigeRank(
-              comment.author.postsCount,
-              comment.author.createdAt,
-            );
-            const roleBadge = getRoleBadge(comment.author.role);
-            const canDeleteComment =
-              Boolean(session) &&
-              (session?.user.id === comment.author.id || isStaff);
-
-            return (
-              <div
-                key={comment.id}
-                className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <UserAvatar
-                      name={comment.author.name}
-                      image={comment.author.image}
-                      size="md"
-                    />
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-                      <strong className="text-zinc-200">
-                        {comment.author.name}
-                      </strong>
-                      {roleBadge && (
-                        <span
-                          className={`rounded border px-1.5 py-0.5 font-semibold ${roleBadge.color}`}
-                        >
-                          {roleBadge.label}
-                        </span>
-                      )}
-                      <span
-                        className={`rounded border px-1.5 py-0.5 ${prestige.badgeColor}`}
-                      >
-                        {prestige.label}
-                      </span>
-                      <span>
-                        • {new Date(comment.createdAt).toLocaleString("fr-FR")}
-                      </span>
-                    </div>
-                  </div>
-
-                  {canDeleteComment && (
-                    <DeleteButton
-                      confirmMessage="Supprimer ce commentaire ?"
-                      onDelete={deleteComment.bind(null, comment.id, topic.id)}
-                    />
-                  )}
-                </div>
-
-                <p className="mt-3 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
-                  {comment.content}
-                </p>
-
-                {comment.author.bio && (
-                  <p className="mt-3 border-t border-zinc-800/70 pt-2 text-[11px] italic whitespace-pre-line text-zinc-500">
-                    {comment.author.bio}
-                  </p>
-                )}
-              </div>
-            );
-          })
+          topic.comments.map((comment) => (
+            <ForumCommentItem
+              key={comment.id}
+              topicId={topic.id}
+              comment={{
+                id: comment.id,
+                content: comment.content,
+                createdAtLabel: new Date(comment.createdAt).toLocaleString(
+                  "fr-FR",
+                  { timeZone: "Europe/Paris" },
+                ),
+                authorName: comment.author.name,
+                authorImage: comment.author.image,
+                authorBio: comment.author.bio,
+                roleBadge: getRoleBadge(comment.author.role),
+                prestige: getPrestigeRank(
+                  comment.author.postsCount,
+                  comment.author.createdAt,
+                ),
+                canEdit: Boolean(
+                  session && session.user.id === comment.author.id,
+                ),
+                canDelete: Boolean(
+                  session && (session.user.id === comment.author.id || isStaff),
+                ),
+              }}
+            />
+          ))
         )}
       </div>
 

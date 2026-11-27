@@ -6,11 +6,10 @@ import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPrestigeRank, getRoleBadge } from "@/lib/ranks";
-import UserAvatar from "@/app/components/UserAvatar";
 import LikeButton from "../LikeButton";
 import LikersSummary, { type LikerInfo } from "../LikersSummary";
 import ArtworkCommentForm from "./ArtworkCommentForm";
-import DeleteArtworkCommentButton from "./DeleteArtworkCommentButton";
+import ArtworkCommentItem from "./ArtworkCommentItem";
 
 async function ArtworkDetail({
   params,
@@ -62,6 +61,15 @@ async function ArtworkDetail({
     notFound();
   }
 
+  const isStaff =
+    session?.user.role === "ADMIN" || session?.user.role === "MODERATOR";
+
+  const isAuthor = Boolean(session && artwork.authorId === session.user.id);
+
+  if (artwork.status !== "APPROVED" && !isStaff && !isAuthor) {
+    notFound();
+  }
+
   const initialLiked = session
     ? artwork.likes.some((like) => like.user.id === session.user.id)
     : false;
@@ -73,15 +81,6 @@ async function ArtworkDetail({
     roleBadge: getRoleBadge(like.user.role),
     prestige: getPrestigeRank(like.user.postsCount, like.user.createdAt),
   }));
-
-  const isStaff =
-    session?.user.role === "ADMIN" || session?.user.role === "MODERATOR";
-
-  const isAuthor = Boolean(session && artwork.authorId === session.user.id);
-
-  if (artwork.status !== "APPROVED" && !isStaff && !isAuthor) {
-    notFound();
-  }
 
   return (
     <>
@@ -158,65 +157,34 @@ async function ArtworkDetail({
           </p>
         ) : (
           <div className="space-y-4">
-            {artwork.artworkComments.map((comment) => {
-              const prestige = getPrestigeRank(
-                comment.author.postsCount,
-                comment.author.createdAt,
-              );
-              const roleBadge = getRoleBadge(comment.author.role);
-              const canDelete =
-                Boolean(session) &&
-                (session?.user.id === comment.author.id || isStaff);
-
-              return (
-                <div
-                  key={comment.id}
-                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <UserAvatar
-                        name={comment.author.name}
-                        image={comment.author.image}
-                        size="md"
-                      />
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-                        <strong className="text-zinc-200">
-                          {comment.author.name}
-                        </strong>
-                        {roleBadge && (
-                          <span
-                            className={`rounded border px-1.5 py-0.5 font-semibold ${roleBadge.color}`}
-                          >
-                            {roleBadge.label}
-                          </span>
-                        )}
-                        <span
-                          className={`rounded border px-1.5 py-0.5 ${prestige.badgeColor}`}
-                        >
-                          {prestige.label}
-                        </span>
-                        <span>
-                          •{" "}
-                          {new Date(comment.createdAt).toLocaleString("fr-FR")}
-                        </span>
-                      </div>
-                    </div>
-
-                    {canDelete && (
-                      <DeleteArtworkCommentButton
-                        commentId={comment.id}
-                        slug={artwork.slug}
-                      />
-                    )}
-                  </div>
-
-                  <p className="mt-3 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed text-zinc-300">
-                    {comment.content}
-                  </p>
-                </div>
-              );
-            })}
+            {artwork.artworkComments.map((comment) => (
+              <ArtworkCommentItem
+                key={comment.id}
+                slug={artwork.slug}
+                comment={{
+                  id: comment.id,
+                  content: comment.content,
+                  createdAtLabel: new Date(comment.createdAt).toLocaleString(
+                    "fr-FR",
+                    { timeZone: "Europe/Paris" },
+                  ),
+                  authorName: comment.author.name,
+                  authorImage: comment.author.image,
+                  roleBadge: getRoleBadge(comment.author.role),
+                  prestige: getPrestigeRank(
+                    comment.author.postsCount,
+                    comment.author.createdAt,
+                  ),
+                  canEdit: Boolean(
+                    session && session.user.id === comment.author.id,
+                  ),
+                  canDelete: Boolean(
+                    session &&
+                    (session.user.id === comment.author.id || isStaff),
+                  ),
+                }}
+              />
+            ))}
           </div>
         )}
       </div>
