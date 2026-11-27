@@ -7,7 +7,7 @@ export default function HomePage() {
       {/* Bannière principale */}
       <section className="relative aspect-2057/764 w-full overflow-hidden rounded-2xl border border-indigo-500/20 shadow-2xl shadow-indigo-950/20">
         <Image
-          src="/images/BannerJA.png"
+          src="/images/BannerJA.webp"
           alt="Jinloup.Art"
           fill
           priority
